@@ -4,3 +4,4 @@ objs/
 bin/
 .settings/
 *.obj
+*.cmd

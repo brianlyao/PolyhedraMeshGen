@@ -58,6 +58,20 @@ public class Face {
 	}
 	
 	/**
+	 * Compute the vector average of all vertices of this face.
+	 * 
+	 * @return The centroid of this face.
+	 */
+	public Vector3d vertexAverage() {
+		Vector3d avg = new Vector3d();
+		for (int v : vertexPositions) {
+			avg.add(mesh.vertexPositions.get(v));
+		}
+		avg.scale(1.0 / numVertices);
+		return avg;
+	}
+	
+	/**
 	 * Compute the centroid of this face. This method will not succeed unless
 	 * setMesh() has been called on this face; this can be done implicitly by
 	 * adding this face to a mesh (see addFace() in Mesh).

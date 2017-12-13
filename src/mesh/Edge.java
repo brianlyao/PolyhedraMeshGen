@@ -1,5 +1,7 @@
 package mesh;
 
+import java.util.Arrays;
+
 import javax.vecmath.Vector3d;
 
 /**
@@ -34,6 +36,28 @@ public class Edge {
 		ends = new int[2];
 		ends[0] = vertex0;
 		ends[1] = vertex1;
+	}
+	
+	/**
+	 * Get the endpoints of this edge, represented by vertex position indices.
+	 * 
+	 * @return The endpoints of this edge.
+	 */
+	public int[] getEnds() {
+		return ends;
+	}
+	
+	/**
+	 * Get the locations of the endpoints of this edge. setMesh() must be
+	 * called before this one is.
+	 * 
+	 * @return The locations of the endpoints of this edge.
+	 */
+	public Vector3d[] getEndLocations() {
+		Vector3d[] endLocations = new Vector3d[2];
+		endLocations[0] = mesh.vertexPositions.get(ends[0]);
+		endLocations[1] = mesh.vertexPositions.get(ends[1]);
+		return endLocations;
 	}
 	
 	/**
@@ -82,6 +106,11 @@ public class Edge {
 	@Override
 	public int hashCode() {
 		return Integer.valueOf(ends[0]).hashCode() * Integer.valueOf(ends[1]).hashCode();
+	}
+	
+	@Override
+	public String toString() {
+		return "Edge:" + Arrays.toString(ends);
 	}
 	
 }

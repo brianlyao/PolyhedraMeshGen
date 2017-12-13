@@ -5,7 +5,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.vecmath.Vector3d;
 
@@ -38,6 +40,19 @@ public class Mesh {
 	 */
 	public int numVertexPositions() {
 		return vertexPositions.size();
+	}
+	
+	/**
+	 * @return The set of all edges in this mesh.
+	 */
+	public Set<Edge> getEdges() {
+		Set<Edge> edges = new HashSet<>();
+		for (Face face : faces) {
+			for (Edge edge : face.getEdges()) {
+				edges.add(edge);
+			}
+		}
+		return edges;
 	}
 	
 	/**
@@ -114,6 +129,15 @@ public class Mesh {
 	}
 	
 	/**
+	 * Set the vertex positions.
+	 * 
+	 * @param positions The new vertex positions.
+	 */
+	public void setVertexPositions(List<Vector3d> positions) {
+		vertexPositions = positions;
+	}
+	
+	/**
 	 * Add a new vertex normal (simply a vector in 3D space). This is added
 	 * to the end of the list of vertex normals, so it takes a new highest
 	 * vertex normal index.
@@ -144,6 +168,15 @@ public class Mesh {
 		for (Vector3d normal : normals) {
 			vertexNormals.add(normal);
 		}
+	}
+	
+	/**
+	 * Set the vertex normals.
+	 * 
+	 * @param normals The new vertex normals.
+	 */
+	public void setVertexNormals(List<Vector3d> normals) {
+		vertexNormals = normals;
 	}
 	
 	/**
@@ -221,6 +254,12 @@ public class Mesh {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	@Override
+	public String toString() {
+		return String.format("Vertices:%s\nNormals:%s\nFaces:%s\n", vertexPositions,
+				vertexNormals, faces);
 	}
 	
 }
