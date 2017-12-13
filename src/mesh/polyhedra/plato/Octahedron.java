@@ -11,6 +11,8 @@ import mesh.Face;
  */
 public class Octahedron extends PlatonicSolid {
 
+	private static final double RADIUS_FACTOR = 1.0 / Math.sqrt(2.0);
+	
 	/**
 	 * Construct a octahedron mesh centered at the origin with the specified
 	 * edge length.
@@ -35,14 +37,24 @@ public class Octahedron extends PlatonicSolid {
 			int next = (i + 1) % middleVertices.length;
 			
 			Face topFace = new Face(3);
-			topFace.setAllVertexPositions(4, next, i);
+			topFace.setAllVertexIndices(4, next, i);
 			
 			Face bottomFace = new Face(3);
-			bottomFace.setAllVertexPositions(5, i, next);
+			bottomFace.setAllVertexIndices(5, i, next);
 			
 			addFaces(topFace, bottomFace);
 		}
 		setVertexNormalsToFaceNormals();	
+	}
+	
+	/**
+	 * Construct a octahedron mesh with the specified circumradius.
+	 * 
+	 * @param circumradius The circumradius this polyhedron will have.
+	 * @param dummy        A dummy variable.
+	 */
+	public Octahedron(double circumradius, boolean dummy) {
+		this(circumradius / RADIUS_FACTOR);
 	}
 
 }

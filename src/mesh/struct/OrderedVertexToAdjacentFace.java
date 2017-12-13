@@ -47,7 +47,7 @@ public class OrderedVertexToAdjacentFace {
 					
 					findIndexOfI:
 					for (int j = 0 ; j < adjFace.numVertices() ; j++) {
-						if (adjFace.getVertexPosition(j) == i) {
+						if (adjFace.getVertexIndex(j) == i) {
 							ind = j;
 							break findIndexOfI;
 						}
@@ -69,13 +69,13 @@ public class OrderedVertexToAdjacentFace {
 					if (indexBeforeI < 0) {
 						indexBeforeI += lastFace.numVertices();
 					}
-					int vertexBeforeI = lastFace.getVertexPosition(indexBeforeI);
+					int vertexBeforeI = lastFace.getVertexIndex(indexBeforeI);
 					
 					// Find next face in order
 					findNextFace:
 					for (Face adjFace : adjacentFaces) {
 						int indexAfterI = (indexOfI.get(adjFace) + 1) % adjFace.numVertices();
-						int vertexAfterI = adjFace.getVertexPosition(indexAfterI);
+						int vertexAfterI = adjFace.getVertexIndex(indexAfterI);
 						if (vertexAfterI == vertexBeforeI) {
 							orderedAdjacentFaces.add(adjFace);
 							break findNextFace;

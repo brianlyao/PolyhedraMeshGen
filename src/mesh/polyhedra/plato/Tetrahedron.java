@@ -11,6 +11,8 @@ import mesh.Face;
  */
 public class Tetrahedron extends PlatonicSolid {
 	
+	private static final double RADIUS_FACTOR = Math.sqrt(6.0) / 4.0;
+	
 	/**
 	 * Construct a tetrahedron mesh centered at the origin with the specified
 	 * edge length.
@@ -34,19 +36,29 @@ public class Tetrahedron extends PlatonicSolid {
 		
 		// Create faces
 		Face f0 = new Face(3);
-		f0.setAllVertexPositions(0, 3, 1);
+		f0.setAllVertexIndices(0, 3, 1);
 		
 		Face f1 = new Face(3);
-		f1.setAllVertexPositions(0, 1, 2);
+		f1.setAllVertexIndices(0, 1, 2);
 		
 		Face f2 = new Face(3);
-		f2.setAllVertexPositions(2, 1, 3);
+		f2.setAllVertexIndices(2, 1, 3);
 		
 		Face f3 = new Face(3);
-		f3.setAllVertexPositions(0, 2, 3);
+		f3.setAllVertexIndices(0, 2, 3);
 		
 		addFaces(f0, f1, f2, f3);
 		setVertexNormalsToFaceNormals();
+	}
+	
+	/**
+	 * Construct a tetrahedron mesh with the specified circumradius.
+	 * 
+	 * @param circumradius The circumradius this polyhedron will have.
+	 * @param dummy        A dummy variable.
+	 */
+	public Tetrahedron(double circumradius, boolean dummy) {
+		this(circumradius / RADIUS_FACTOR);
 	}
 	
 }

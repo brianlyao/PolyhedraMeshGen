@@ -43,7 +43,7 @@ public class FaceToAdjacentFace {
 				
 				// Find neighbor by looking at intersection of the faces neighboring the ith
 				// vertex and (i + 1)th vertex of the face
-				for (Face ini : v2af.getAdjacentFaces(face.getVertexPosition(i))) {
+				for (Face ini : v2af.getAdjacentFaces(face.getVertexIndex(i))) {
 					if (v2af.getAdjacentFaces(next).contains(ini)) {
 						neighbor = ini;
 						break;

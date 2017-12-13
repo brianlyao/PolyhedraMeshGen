@@ -11,6 +11,8 @@ import mesh.Face;
  */
 public class Cube extends PlatonicSolid {
 	
+	private static final double RADIUS_FACTOR = Math.sqrt(3.0) / 2;
+	
 	/**
 	 * Construct a cube mesh centered at the origin with the specified
 	 * edge length.
@@ -34,25 +36,35 @@ public class Cube extends PlatonicSolid {
 		
 		// Construct faces
 		Face f0 = new Face(4);
-		f0.setAllVertexPositions(0, 2, 3, 1);
+		f0.setAllVertexIndices(0, 2, 3, 1);
 		
 		Face f1 = new Face(4);
-		f1.setAllVertexPositions(0, 4, 6, 2);
+		f1.setAllVertexIndices(0, 4, 6, 2);
 		
 		Face f2 = new Face(4);
-		f2.setAllVertexPositions(0, 1, 5, 4);
+		f2.setAllVertexIndices(0, 1, 5, 4);
 		
 		Face f3 = new Face(4);
-		f3.setAllVertexPositions(7, 6, 4, 5);
+		f3.setAllVertexIndices(7, 6, 4, 5);
 		
 		Face f4 = new Face(4);
-		f4.setAllVertexPositions(7, 5, 1, 3);
+		f4.setAllVertexIndices(7, 5, 1, 3);
 		
 		Face f5 = new Face(4);
-		f5.setAllVertexPositions(7, 3, 2, 6);
+		f5.setAllVertexIndices(7, 3, 2, 6);
 
 		addFaces(f0, f1, f2, f3, f4, f5);
 		setVertexNormalsToFaceNormals();
+	}
+	
+	/**
+	 * Construct a cube mesh with the specified circumradius.
+	 * 
+	 * @param circumradius The circumradius this polyhedron will have.
+	 * @param dummy        A dummy variable.
+	 */
+	public Cube(double circumRadius, boolean dummy) {
+		this(circumRadius / RADIUS_FACTOR);
 	}
 	
 }

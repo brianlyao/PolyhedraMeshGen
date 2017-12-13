@@ -204,7 +204,7 @@ public class Mesh {
 		for (int i = 0 ; i < faces.size() ; i++) {
 			Vector3d faceNormal = faces.get(i).getFaceNormal();
 			addVertexNormal(faceNormal);
-			faces.get(i).setAllVertexNormalsTo(i);
+			faces.get(i).setAllVertexIndicesTo(i);
 		}
 	}
 	

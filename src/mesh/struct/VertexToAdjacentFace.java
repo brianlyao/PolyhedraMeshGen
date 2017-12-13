@@ -26,7 +26,7 @@ public class VertexToAdjacentFace {
 	public VertexToAdjacentFace(Mesh mesh) {
 		vertexToFace = new HashMap<Integer, Set<Face>>();
 		for (Face face : mesh.getFaces()) {
-			for (int vertexIndex : face.getVertexPositions()) {
+			for (int vertexIndex : face.getVertexIndices()) {
 				if (vertexToFace.get(vertexIndex) == null) {
 					vertexToFace.put(vertexIndex, new HashSet<Face>());
 				}

@@ -115,7 +115,7 @@ public class Polyhedron extends Mesh {
 				for (int j = 0 ; j < adjacentFaces.size() ; j++) {
 					Face jthFace = adjacentFaces.get(j);
 					int newVertexIndex = newVertices.get(jthFace);
-					newFace.setVertexPosition(j, newVertexIndex);
+					newFace.setVertexIndex(j, newVertexIndex);
 				}
 				dualPolyhedron.addFace(newFace);
 			}
@@ -150,7 +150,7 @@ public class Polyhedron extends Mesh {
 					amboPolyhedron.addVertexPosition(edgeMidpt);
 					newVertices.put(edge, vertexIndex++);
 				}
-				newFace.setVertexPosition(i, newVertices.get(edge));
+				newFace.setVertexIndex(i, newVertices.get(edge));
 			}
 			amboPolyhedron.addFace(newFace);
 		}
@@ -161,7 +161,7 @@ public class Polyhedron extends Mesh {
 			List<Edge> adjacentEdges = ovtae.getAdjacentEdges(i);
 			Face newVertexFace = new Face(adjacentEdges.size());
 			for (int j = 0 ; j < adjacentEdges.size() ; j++) {
-				newVertexFace.setVertexPosition(j, newVertices.get(adjacentEdges.get(j)));
+				newVertexFace.setVertexIndex(j, newVertices.get(adjacentEdges.get(j)));
 			}
 			amboPolyhedron.addFace(newVertexFace);
 		}
@@ -234,10 +234,10 @@ public class Polyhedron extends Mesh {
 			// Check orientation: make sure faces we make are specified in
 			// CCW order
 			for (int i = 0 ; i < adjacentFaces[0].numVertices() ; i++) {
-				int v = adjacentFaces[0].getVertexPosition(i);
+				int v = adjacentFaces[0].getVertexIndex(i);
 				if (v == edgeEnds[0]) {
 					int vnext = (i + 1) % adjacentFaces[0].numVertices();
-					if (adjacentFaces[0].getVertexPosition(vnext) != edgeEnds[1]) {
+					if (adjacentFaces[0].getVertexIndex(vnext) != edgeEnds[1]) {
 						// Swap order of adjacent faces
 						Face temp = adjacentFaces[0];
 						adjacentFaces[0] = adjacentFaces[1];
@@ -251,8 +251,8 @@ public class Polyhedron extends Mesh {
 			Face bottomFace = new Face(3);
 			int vface0 = newVertices.get(adjacentFaces[0]);
 			int vface1 = newVertices.get(adjacentFaces[1]);
-			topFace.setAllVertexPositions(vface0, vface1, edgeEnds[1]);
-			bottomFace.setAllVertexPositions(vface1, vface0, edgeEnds[0]);
+			topFace.setAllVertexIndices(vface0, vface1, edgeEnds[1]);
+			bottomFace.setAllVertexIndices(vface1, vface0, edgeEnds[0]);
 			needlePolyhedron.addFaces(topFace, bottomFace);
 		}
 		
@@ -359,7 +359,7 @@ public class Polyhedron extends Mesh {
 				int[] edgeIndices = newEdges.get(ends[0]).get(ends[1]);
 				
 				Face pentagon = new Face(5);
-				pentagon.setAllVertexPositions(centroidIndices.get(face), prevIndices[1],
+				pentagon.setAllVertexIndices(centroidIndices.get(face), prevIndices[1],
 						faceEdge.getEnds()[0], edgeIndices[0], edgeIndices[1]);
 				gyroPolyhedron.addFace(pentagon);
 				
@@ -404,6 +404,91 @@ public class Polyhedron extends Mesh {
 	 */
 	public Polyhedron medial() {
 		return this.bevel().dual();
+	}
+	
+	/**
+	 * Computes the "exalt" polyhedron of this polyhedron. Equivalent to
+	 * applying needle twice.
+	 * 
+	 * @return The exalt polyhedron.
+	 */
+	public Polyhedron exalt() {
+		return this.needle().needle();
+	}
+	
+	/**
+	 * Computes the "yank" polyhedron of this polyhedron. Equivalent to
+	 * applying zip twice.
+	 * 
+	 * @return The yank polyhedron.
+	 */
+	public Polyhedron yank() {
+		return this.zip().zip();
+	}
+	
+	/**
+	 * Computes the "chamfer" polyhedron of this polyhedron. Truncates edges
+	 * and replaces them with hexagonal faces.
+	 * 
+	 * @return The chamfer polyhedron.
+	 */
+	public Polyhedron chamfer() {
+		return this.dual().subdivide().dual();
+	}
+	
+	/**
+	 * Computes the "subdivide" polyhedron of this polyhedron. Adds vertices at
+	 * the midpoints of edges, and creates new triangular faces around original
+	 * vertices. Equivalent to ambo without removing the original vertices.
+	 * 
+	 * @return The subdivide polyhedron.
+	 */
+	public Polyhedron subdivide() {
+		Polyhedron subdividePolyhedron = new Polyhedron();
+		for (Vector3d vertexPos : vertexPositions) {
+			subdividePolyhedron.addVertexPosition(new Vector3d(vertexPos));
+		}
+		
+		// Create new vertices, one at the midpoint of each edge
+		Map<Edge, Integer> newVertices = new HashMap<>();
+		int vertexIndex = subdividePolyhedron.numVertexPositions();
+		for (Face face : faces) {
+			// Create a new face for each face on this polyhedron
+			Face newFace = new Face(face.numVertices());
+			Edge[] edges = face.getEdges();
+			for (int i = 0 ; i < face.numVertices() ; i++) {
+				Edge edge = edges[i];
+				if (newVertices.get(edge) == null) {
+					Vector3d edgeMidpt = edge.midpoint();
+					subdividePolyhedron.addVertexPosition(edgeMidpt);
+					newVertices.put(edge, vertexIndex++);
+				}
+				newFace.setVertexIndex(i, newVertices.get(edge));
+			}
+			subdividePolyhedron.addFace(newFace);
+		}
+		
+		// Create new faces for each vertex
+		OrderedVertexToAdjacentEdge ovtae = new OrderedVertexToAdjacentEdge(this);
+		for (int i = 0 ; i < this.numVertexPositions() ; i++) {
+			List<Edge> adjacentEdges = ovtae.getAdjacentEdges(i);
+			
+			Edge prevEdge = adjacentEdges.get(adjacentEdges.size() - 1);
+			for (Edge edge : adjacentEdges) {
+				int prevVertex = newVertices.get(prevEdge);
+				int currVertex = newVertices.get(edge);
+				Face triangle = new Face(3);
+				triangle.setAllVertexIndices(i, prevVertex, currVertex);
+				
+				subdividePolyhedron.addFace(triangle);
+				
+				// Update previous edge
+				prevEdge = edge;
+			}
+		}
+		
+		subdividePolyhedron.setVertexNormalsToFaceNormals();
+		return subdividePolyhedron;
 	}
 	
 }

@@ -11,6 +11,8 @@ import mesh.Face;
  */
 public class Dodecahedron extends PlatonicSolid {
 	
+	private static final double RADIUS_FACTOR = Math.sqrt(3.0) / 4.0 * (1.0 + Math.sqrt(5));
+	
 	/**
 	 * Construct a dodecahedron mesh centered at the origin with the specified
 	 * edge length.
@@ -69,21 +71,31 @@ public class Dodecahedron extends PlatonicSolid {
 		}
 		
 		// Construct faces
-		faces[0].setAllVertexPositions(0, 16, 2, 14, 12);
-		faces[1].setAllVertexPositions(1, 13, 15, 3, 18);
-		faces[2].setAllVertexPositions(4, 12, 14, 6, 17);
-		faces[3].setAllVertexPositions(5, 19, 7, 15, 13);
-		faces[4].setAllVertexPositions(0, 12, 4, 10, 8);
-		faces[5].setAllVertexPositions(2, 9, 11, 6, 14);
-		faces[6].setAllVertexPositions(1, 8, 10, 5, 13);
-		faces[7].setAllVertexPositions(3, 15, 7, 11, 9);
-		faces[8].setAllVertexPositions(0, 8, 1, 18, 16);
-		faces[9].setAllVertexPositions(4, 17, 19, 5, 10);
-		faces[10].setAllVertexPositions(2, 16, 18, 3, 9);
-		faces[11].setAllVertexPositions(6, 11, 7, 19, 17);
+		faces[0].setAllVertexIndices(0, 16, 2, 14, 12);
+		faces[1].setAllVertexIndices(1, 13, 15, 3, 18);
+		faces[2].setAllVertexIndices(4, 12, 14, 6, 17);
+		faces[3].setAllVertexIndices(5, 19, 7, 15, 13);
+		faces[4].setAllVertexIndices(0, 12, 4, 10, 8);
+		faces[5].setAllVertexIndices(2, 9, 11, 6, 14);
+		faces[6].setAllVertexIndices(1, 8, 10, 5, 13);
+		faces[7].setAllVertexIndices(3, 15, 7, 11, 9);
+		faces[8].setAllVertexIndices(0, 8, 1, 18, 16);
+		faces[9].setAllVertexIndices(4, 17, 19, 5, 10);
+		faces[10].setAllVertexIndices(2, 16, 18, 3, 9);
+		faces[11].setAllVertexIndices(6, 11, 7, 19, 17);
 		
 		addFaces(faces);
 		setVertexNormalsToFaceNormals();
+	}
+	
+	/**
+	 * Construct a dodecahedron mesh with the specified circumradius.
+	 * 
+	 * @param circumradius The circumradius this polyhedron will have.
+	 * @param dummy        A dummy variable.
+	 */
+	public Dodecahedron(double circumradius, boolean dummy) {
+		this(circumradius / RADIUS_FACTOR);
 	}
 	
 }

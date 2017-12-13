@@ -32,7 +32,7 @@ public class Canonicalize {
 			double avgEdgeDistance = 0.;
 			
 			// Retrieve the indices of the vertices defining this face
-			int[] faceVertexIndices = face.getVertexPositions();
+			int[] faceVertexIndices = face.getVertexIndices();
 			
 			// Keep track of the "previous" two vertices in CCW order
 			int lastLastVertexIndex = faceVertexIndices[faceVertexIndices.length - 2];
@@ -73,16 +73,6 @@ public class Canonicalize {
 		return newVertices;
 	}
 	
-	private static List<Vector3d> reciprocalCenters(Polyhedron poly) {
-		List<Vector3d> faceCenters = new ArrayList<>();
-		for (Face face : poly.getFaces()) {
-			Vector3d newCenter = new Vector3d(face.vertexAverage());
-			newCenter.scale(1.0 / newCenter.lengthSquared());
-			faceCenters.add(newCenter);
-		}
-		return faceCenters;
-	}
-	
 	// Unused
 	public static void canonicalize(Polyhedron poly, int numIterations) {
 		Polyhedron dual = poly.dual();
@@ -91,6 +81,22 @@ public class Canonicalize {
 			poly.setVertexPositions(reciprocalVertices(dual));
 		}
 		poly.setVertexNormalsToFaceNormals();
+	}
+	
+	/**
+	 * Reflects the centers of faces across the unit sphere.
+	 * 
+	 * @param poly The polyhedron whose centers to invert.
+	 * @return The list of inverted face centers.
+	 */
+	private static List<Vector3d> reciprocalCenters(Polyhedron poly) {
+		List<Vector3d> faceCenters = new ArrayList<>();
+		for (Face face : poly.getFaces()) {
+			Vector3d newCenter = new Vector3d(face.vertexAverage());
+			newCenter.scale(1.0 / newCenter.lengthSquared());
+			faceCenters.add(newCenter);
+		}
+		return faceCenters;
 	}
 	
 	/**

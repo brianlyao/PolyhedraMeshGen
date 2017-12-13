@@ -41,7 +41,7 @@ public class OrderedVertexToAdjacentEdge {
 			for (Face adjFace : adjacentFaces) {
 				int indOfI = -1;
 				for (int j = 0 ; j < adjFace.numVertices() ; j++) {
-					if (adjFace.getVertexPosition(j) == i) {
+					if (adjFace.getVertexIndex(j) == i) {
 						indOfI = j;
 						break;
 					}
@@ -52,7 +52,7 @@ public class OrderedVertexToAdjacentEdge {
 					beforeI += adjFace.numVertices();
 				}
 				
-				Edge adjEdge = new Edge(adjFace.getVertexPosition(beforeI), i);
+				Edge adjEdge = new Edge(adjFace.getVertexIndex(beforeI), i);
 				adjEdge.setMesh(mesh);
 				adjacentEdges.add(adjEdge);
 			}

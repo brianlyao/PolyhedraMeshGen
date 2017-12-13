@@ -12,6 +12,8 @@ import mesh.polyhedra.Polyhedron;
  */
 public class Icosahedron extends PlatonicSolid {
 	
+	private static final double RADIUS_FACTOR = Math.sin(2.0 * Math.PI / 5.0);
+	
 	/**
 	 * Construct an icosahedron mesh centered at the origin with the specified
 	 * edge length.
@@ -29,12 +31,22 @@ public class Icosahedron extends PlatonicSolid {
 		addFaces(dualDodecahedron.getFaces());
 		
 		// Scale vertex positions
-		Edge sampleEdge = new Edge(faces.get(0).getVertexPosition(0), faces.get(0).getVertexPosition(1));
+		Edge sampleEdge = new Edge(faces.get(0).getVertexIndex(0), faces.get(0).getVertexIndex(1));
 		sampleEdge.setMesh(this);
 		double scaleFactor = edgeLength / sampleEdge.length();
 		for (Vector3d vertexPos : vertexPositions) {
 			vertexPos.scale(scaleFactor);
 		}
+	}
+	
+	/**
+	 * Construct a icosahedron mesh with the specified circumradius.
+	 * 
+	 * @param circumradius The circumradius this polyhedron will have.
+	 * @param dummy        A dummy variable.
+	 */
+	public Icosahedron(double circumradius, boolean dummy) {
+		this(circumradius / RADIUS_FACTOR);
 	}
 	
 }

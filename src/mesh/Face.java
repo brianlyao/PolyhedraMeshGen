@@ -28,8 +28,8 @@ public class Face {
 	private Mesh mesh;
 	
 	private int numVertices;
-	private int[] vertexPositions;
-	private int[] vertexNormals;
+	private int[] vertexIndices;
+	private int[] normalIndices;
 	
 	/**
 	 * Create a face with enough space to store data for the specified number
@@ -42,8 +42,8 @@ public class Face {
 			throw new IllegalArgumentException("A polygon face cannot have fewer than 3 vertices.");
 		}
 		this.numVertices = numVertices;
-		vertexPositions = new int[numVertices];
-		vertexNormals = new int[numVertices];
+		vertexIndices = new int[numVertices];
+		normalIndices = new int[numVertices];
 	}
 	
 	/**
@@ -53,8 +53,8 @@ public class Face {
 	 */
 	public Face(Face face) {
 		this(face.numVertices);
-		System.arraycopy(face.vertexPositions, 0, vertexPositions, 0, face.numVertices);
-		System.arraycopy(face.vertexNormals, 0, vertexNormals, 0, face.numVertices);
+		System.arraycopy(face.vertexIndices, 0, vertexIndices, 0, face.numVertices);
+		System.arraycopy(face.normalIndices, 0, normalIndices, 0, face.numVertices);
 	}
 	
 	/**
@@ -64,7 +64,7 @@ public class Face {
 	 */
 	public Vector3d vertexAverage() {
 		Vector3d avg = new Vector3d();
-		for (int v : vertexPositions) {
+		for (int v : vertexIndices) {
 			avg.add(mesh.vertexPositions.get(v));
 		}
 		avg.scale(1.0 / numVertices);
@@ -84,9 +84,9 @@ public class Face {
 		double[] triangleAreas = new double[triangles.length];
 		Vector3d[] triangleCentroids = new Vector3d[triangles.length];
 		for (int i = 0 ; i < triangles.length ; i++) {
-			Vector3d v0 = mesh.vertexPositions.get(triangles[i].getVertexPosition(0));
-			Vector3d v1 = mesh.vertexPositions.get(triangles[i].getVertexPosition(1));
-			Vector3d v2 = mesh.vertexPositions.get(triangles[i].getVertexPosition(2));
+			Vector3d v0 = mesh.vertexPositions.get(triangles[i].getVertexIndex(0));
+			Vector3d v1 = mesh.vertexPositions.get(triangles[i].getVertexIndex(1));
+			Vector3d v2 = mesh.vertexPositions.get(triangles[i].getVertexIndex(2));
 			
 			// Compute centroid of the triangle
 			Vector3d triangleCentroid = new Vector3d();
@@ -134,8 +134,8 @@ public class Face {
 			int v1 = i + 1;
 			int v2 = numVertices - 1;
 			Face triangle = new Face(3);
-			triangle.setAllVertexPositions(vertexPositions[v0], vertexPositions[v1], vertexPositions[v2]);
-			triangle.setAllVertexNormals(vertexNormals[v0], vertexNormals[v1], vertexNormals[v2]);
+			triangle.setAllVertexIndices(vertexIndices[v0], vertexIndices[v1], vertexIndices[v2]);
+			triangle.setAllNormalIndices(normalIndices[v0], normalIndices[v1], normalIndices[v2]);
 			triangles[i] = triangle;
 		}
 		return triangles;
@@ -156,7 +156,7 @@ public class Face {
 		Edge[] edges = new Edge[numVertices];
 		for (int i = 0 ; i < numVertices ; i++) {
 			int next = (i + 1) % numVertices;
-			Edge ithEdge = new Edge(vertexPositions[i], vertexPositions[next]);
+			Edge ithEdge = new Edge(vertexIndices[i], vertexIndices[next]);
 			ithEdge.setMesh(mesh);
 			edges[i] = ithEdge;
 		}
@@ -172,10 +172,10 @@ public class Face {
 	 * @return The 3D vector containing the normal to the face.
 	 */
 	public Vector3d getFaceNormal() {
-		Vector3d v0 = new Vector3d(mesh.vertexPositions.get(vertexPositions[0]));
-		Vector3d diff01 = new Vector3d(mesh.vertexPositions.get(vertexPositions[1]));
+		Vector3d v0 = new Vector3d(mesh.vertexPositions.get(vertexIndices[0]));
+		Vector3d diff01 = new Vector3d(mesh.vertexPositions.get(vertexIndices[1]));
 		diff01.sub(v0);
-		Vector3d diff0n = new Vector3d(mesh.vertexPositions.get(vertexPositions[numVertices - 1]));
+		Vector3d diff0n = new Vector3d(mesh.vertexPositions.get(vertexIndices[numVertices - 1]));
 		diff0n.sub(v0);
 		
 		Vector3d norm = new Vector3d();
@@ -189,15 +189,15 @@ public class Face {
 	 *               normal (index) to retrieve.
 	 * @return The index of the specified vertex's normal.
 	 */
-	public int getVertexNormal(int vertex) {
-		return vertexNormals[vertex];
+	public int getNormalIndex(int vertex) {
+		return normalIndices[vertex];
 	}
 	
 	/**
 	 * @return An array of all normal indices for this face.
 	 */
-	public int[] getVertexNormals() {
-		return vertexNormals;
+	public int[] getNormalIndices() {
+		return normalIndices;
 	}
 	
 	/**
@@ -205,15 +205,15 @@ public class Face {
 	 *               position (index) to retrieve.
 	 * @return The index of the specified vertex's position.
 	 */
-	public int getVertexPosition(int vertex) {
-		return vertexPositions[vertex];
+	public int getVertexIndex(int vertex) {
+		return vertexIndices[vertex];
 	}
 	
 	/**
 	 * @return An array of all position indices for this face.
 	 */
-	public int[] getVertexPositions() {
-		return vertexPositions;
+	public int[] getVertexIndices() {
+		return vertexIndices;
 	}
 	
 	/**
@@ -231,8 +231,8 @@ public class Face {
 	 * @param normalIndices Set the normal indices to the contents of the
 	 *                      provided array.
 	 */
-	public void setAllVertexNormals(int ... normalIndices) {
-		System.arraycopy(normalIndices, 0, vertexNormals, 0, vertexNormals.length);
+	public void setAllNormalIndices(int ... normalIndices) {
+		System.arraycopy(normalIndices, 0, normalIndices, 0, normalIndices.length);
 	}
 	
 	/**
@@ -240,9 +240,9 @@ public class Face {
 	 * 
 	 * @param normalIndex The index of the normal all vertices will use.
 	 */
-	public void setAllVertexNormalsTo(int normalIndex) {
+	public void setAllVertexIndicesTo(int normalIndex) {
 		for (int i = 0 ; i < numVertices ; i++) {
-			vertexNormals[i] = normalIndex;
+			normalIndices[i] = normalIndex;
 		}
 	}
 	
@@ -252,8 +252,8 @@ public class Face {
 	 * @param positionIndices Set the position indices to the contents of the
 	 *                        provided array.
 	 */
-	public void setAllVertexPositions(int ... positionIndices) {
-		System.arraycopy(positionIndices, 0, vertexPositions, 0, vertexPositions.length);
+	public void setAllVertexIndices(int ... positionIndices) {
+		System.arraycopy(positionIndices, 0, vertexIndices, 0, vertexIndices.length);
 	}
 	
 	/**
@@ -281,7 +281,7 @@ public class Face {
 	 * @param normalIndex   The index of the vertex's normal in the mesh.
 	 */
 	public void setVertexData(int vertex, int positionIndex, int normalIndex) {
-		setVertexPosition(vertex, positionIndex);
+		setVertexIndex(vertex, positionIndex);
 		setVertexNormal(vertex, normalIndex);
 	}
 	
@@ -294,19 +294,19 @@ public class Face {
 	 * @param normalIndex The index of the vertex's normal in the mesh.
 	 */
 	public void setVertexNormal(int vertex, int normalIndex) {
-		vertexNormals[vertex] = normalIndex;
+		normalIndices[vertex] = normalIndex;
 	}
 	
 	/**
 	 * Set the position for the vertex of this face stored at index
-	 * "vertex" (the data of this Face is stored in arrays; the index
+	 * "vertex" (the data of this Face is stored in arrays; the "vertex"
 	 * corresponds to the index of the vertex in these arrays).
 	 * 
-	 * @param vertex      The vertex whose position we want to set.
-	 * @param normalIndex The index of the vertex's position in the mesh.
+	 * @param vertex        The vertex whose position we want to set.
+	 * @param positionIndex The index of the vertex's position in the mesh.
 	 */
-	public void setVertexPosition(int vertex, int positionIndex) {
-		vertexPositions[vertex] = positionIndex;
+	public void setVertexIndex(int vertex, int positionIndex) {
+		vertexIndices[vertex] = positionIndex;
 	}
 	
 	/**
@@ -316,8 +316,8 @@ public class Face {
 	 */
 	public String toOBJString() {
 		StringBuilder builder = new StringBuilder("f ");
-		for (int i = 0 ; i < vertexPositions.length ; i++) {
-			builder.append(String.format("%d//%d ", vertexPositions[i] + 1, vertexNormals[i] + 1));
+		for (int i = 0 ; i < vertexIndices.length ; i++) {
+			builder.append(String.format("%d//%d ", vertexIndices[i] + 1, normalIndices[i] + 1));
 		}
 		builder.deleteCharAt(builder.length() - 1);
 		return builder.toString();
@@ -325,7 +325,7 @@ public class Face {
 	
 	@Override
 	public String toString() {
-		return "Face:" + Arrays.toString(vertexPositions);
+		return "Face:" + Arrays.toString(vertexIndices);
 	}
 	
 }
