@@ -6,13 +6,14 @@ import java.util.Map;
 
 import javax.vecmath.Vector3d;
 
-import util.Canonicalize;
 import mesh.Edge;
 import mesh.Face;
 import mesh.Mesh;
 import mesh.struct.EdgeToAdjacentFace;
 import mesh.struct.OrderedVertexToAdjacentEdge;
 import mesh.struct.OrderedVertexToAdjacentFace;
+import util.Canonicalize;
+import util.Struct;
 
 /**
  * A class for generic closed polyhedra meshes. The class contains
@@ -74,7 +75,8 @@ public class Polyhedron extends Mesh {
 	}
 	
 	/**
-	 * Canonicalizes this polyhedron. See util.Canonicalize for more details.
+	 * Canonicalizes this polyhedron for the given number of iterations.
+	 * See util.Canonicalize for more details.
 	 * 
 	 * @param iterations The number of iterations to run the canonicalization.
 	 * @return The canonicalized version of this polyhedron.
@@ -82,6 +84,20 @@ public class Polyhedron extends Mesh {
 	public Polyhedron canonicalize(int iterations) {
 		Polyhedron canonicalized = this.clone();
 		Canonicalize.adjust(canonicalized, iterations);
+		return canonicalized;
+	}
+	
+	/**
+	 * Canonicalizes this polyhedron until the change in position does not
+	 * exceed the given threshold. That is, the algorithm terminates when no vertex
+	 * moves more than the threshold after one iteration.
+	 * 
+	 * @param threshold The threshold for change in one iteration.
+	 * @return The canonicalized version of this polyhedron.
+	 */
+	public Polyhedron canonicalize(double threshold) {
+		Polyhedron canonicalized = this.clone();
+		Canonicalize.adjust(canonicalized, threshold);
 		return canonicalized;
 	}
 	
@@ -489,6 +505,71 @@ public class Polyhedron extends Mesh {
 		
 		subdividePolyhedron.setVertexNormalsToFaceNormals();
 		return subdividePolyhedron;
+	}
+	
+	/**
+	 * Computes the "loft" polyhedron of this polyhedron. Adds a smaller
+	 * version of this face, with n trapezoidal faces connecting the inner
+	 * smaller version and the outer original version, where n is the number
+	 * of vertices the face has.
+	 * 
+	 * @return The loft polyhedron.
+	 */
+	public Polyhedron loft() {
+		Polyhedron loftPolyhedron = new Polyhedron();
+		for (Vector3d vertexPos : vertexPositions) {
+			loftPolyhedron.addVertexPosition(new Vector3d(vertexPos));
+		}
+		
+		// Generate new vertices
+		Map<Face, int[]> newVertices = new HashMap<>();
+		int vertexIndex = loftPolyhedron.numVertexPositions();
+		for (Face face : faces) {
+			Face shrunk = new Face(face.numVertices());
+			int[] newFaceVertices = new int[face.numVertices()];
+			
+			Vector3d centroid = face.centroid();
+			for (int i = 0 ; i < face.numVertices() ; i++) {
+				int index = face.getVertexIndex(i);
+				Vector3d vertex = vertexPositions.get(index);
+				Vector3d toCentroid = new Vector3d();
+				toCentroid.sub(centroid, vertex);
+				toCentroid.scale(0.3); // arbitrary small factor
+				
+				Vector3d newVertex = new Vector3d();
+				newVertex.add(vertex, toCentroid);
+				
+				loftPolyhedron.addVertexPosition(newVertex);
+				newFaceVertices[i] = vertexIndex;
+				shrunk.setVertexIndex(i, vertexIndex);
+				vertexIndex++;
+			}
+			
+			newVertices.put(face, newFaceVertices);
+			loftPolyhedron.addFace(shrunk);
+		}
+		
+		// Generate new faces
+		for (Face face : faces) {
+			int[] newFaceVertices = newVertices.get(face);
+			int prevIndex = face.getVertexIndex(face.numVertices() - 1);
+			int newPrevIndex = newFaceVertices[face.numVertices() - 1];
+			for (int i = 0 ; i < face.numVertices() ; i++) {
+				int currIndex = face.getVertexIndex(i);
+				int newCurrIndex = newFaceVertices[i];
+				
+				Face trapezoid = new Face(4);
+				trapezoid.setAllVertexIndices(prevIndex, currIndex,
+						newCurrIndex, newPrevIndex);
+				loftPolyhedron.addFace(trapezoid);
+				
+				prevIndex = currIndex;
+				newPrevIndex = newCurrIndex;
+			}
+		}
+		
+		loftPolyhedron.setVertexNormalsToFaceNormals();
+		return loftPolyhedron;
 	}
 	
 }

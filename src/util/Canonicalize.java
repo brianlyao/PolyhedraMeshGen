@@ -116,4 +116,43 @@ public class Canonicalize {
 		poly.setVertexNormalsToFaceNormals();
 	}
 	
+	/**
+	 * Canonicalizes a polyhedron by adjusting its vertices iteratively. When
+	 * no vertex moves more than the given threshold, the algorithm terminates.
+	 * 
+	 * @param poly      The polyhedron to canonicalize.
+	 * @param threshold The threshold of vertex movement after an iteration.
+	 * @return The number of iterations that were executed.
+	 */
+	public static int adjust(Polyhedron poly, double threshold) {
+		Polyhedron dual = poly.dual();
+		List<Vector3d> currentPositions = Struct.copyVectorList(poly.getVertexPositions());
+		
+		int iterations = 0;
+		while (true) {
+			List<Vector3d> newDualPositions = reciprocalCenters(poly);
+			dual.setVertexPositions(newDualPositions);
+			List<Vector3d> newPositions = reciprocalCenters(dual);
+			poly.setVertexPositions(newPositions);
+			
+			double maxChange = Double.NEGATIVE_INFINITY;
+			for (int i = 0 ; i < currentPositions.size() ; i++) {
+				Vector3d newPos = poly.getVertexPositions().get(i);
+				Vector3d diff = new Vector3d();
+				diff.sub(newPos, currentPositions.get(i));
+				maxChange = Math.max(maxChange, diff.length());
+			}
+			
+			if (maxChange < threshold) {
+				break;
+			}
+			
+			currentPositions = Struct.copyVectorList(poly.getVertexPositions());
+			iterations++;
+		}
+		
+		poly.setVertexNormalsToFaceNormals();
+		return iterations;
+	}
+	
 }
