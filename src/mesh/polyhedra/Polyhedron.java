@@ -13,7 +13,6 @@ import mesh.struct.EdgeToAdjacentFace;
 import mesh.struct.OrderedVertexToAdjacentEdge;
 import mesh.struct.OrderedVertexToAdjacentFace;
 import util.Canonicalize;
-import util.Struct;
 
 /**
  * A class for generic closed polyhedra meshes. The class contains
@@ -534,7 +533,7 @@ public class Polyhedron extends Mesh {
 				Vector3d vertex = vertexPositions.get(index);
 				Vector3d toCentroid = new Vector3d();
 				toCentroid.sub(centroid, vertex);
-				toCentroid.scale(0.3); // arbitrary small factor
+				toCentroid.scale(0.3); // 0 < arbitrary scale factor < 1
 				
 				Vector3d newVertex = new Vector3d();
 				newVertex.add(vertex, toCentroid);
@@ -570,6 +569,202 @@ public class Polyhedron extends Mesh {
 		
 		loftPolyhedron.setVertexNormalsToFaceNormals();
 		return loftPolyhedron;
+	}
+	
+	/**
+	 * Compute the "quinto" polyhedron of this polyhedron. Equivalent to an
+	 * ortho but truncating the vertex at the center of original faces. This
+	 * creates a small copy of the original face (but rotated).
+	 * 
+	 * @return The quinto polyhedron.
+	 */
+	public Polyhedron quinto() {
+		Polyhedron quintoPolyhedron = new Polyhedron();
+		for (Vector3d vertexPos : vertexPositions) {
+			quintoPolyhedron.addVertexPosition(new Vector3d(vertexPos));
+		}
+		
+		// Create new vertices at the midpoint of each edge and toward the
+		// face's centroid
+		Map<Integer, Map<Integer, int[]>> newVertices = new HashMap<>();
+		int vertexIndex = quintoPolyhedron.numVertexPositions();
+		for (Face face : faces) {
+			Vector3d centroid = face.centroid();
+			
+			Edge[] edges = face.getEdges();
+			for (int i = 0 ; i < edges.length ; i++) {
+				int[] endsi = edges[i].getEnds();
+				if (!newVertices.containsKey(endsi[0])) {
+					newVertices.put(endsi[0], new HashMap<Integer, int[]>());
+				}
+				
+				// The indices of the new vertices
+				int[] newIndices = new int[2];
+				
+				Vector3d edgeMidpt = edges[i].midpoint();
+				
+				Vector3d fromCentroid = new Vector3d();
+				fromCentroid.sub(edgeMidpt, centroid);
+				fromCentroid.scale(0.3); // 0 < arbitrary scale factor < 1
+				
+				Vector3d newVertex = new Vector3d();
+				newVertex.add(centroid, fromCentroid);
+				
+				// Check if the midpoint of the edge has already been added
+				if (newVertices.containsKey(endsi[1]) &&
+						newVertices.get(endsi[1]).containsKey(endsi[0])) {
+					int midptVertex = newVertices.get(endsi[1]).get(endsi[0])[0];
+					newIndices[0] = midptVertex;
+				} else {
+					quintoPolyhedron.addVertexPosition(edgeMidpt);
+					newIndices[0] = vertexIndex++;
+				}
+				
+				quintoPolyhedron.addVertexPosition(newVertex);
+				newIndices[1] = vertexIndex++;
+				newVertices.get(endsi[0]).put(endsi[1], newIndices);
+			}
+		}
+		
+		// Generate new faces
+		for (Face face : faces) {
+			Face centralFace = new Face(face.numVertices());
+			Edge[] edges = face.getEdges();
+			
+			int[] prevEnds = edges[edges.length - 1].getEnds();
+			int[] prevVertices = newVertices.get(prevEnds[0]).get(prevEnds[1]);
+			int centralIndex = 0;
+			for (Edge currEdge : edges) {
+				int[] currEnds = currEdge.getEnds();
+				int[] currVertices = newVertices.get(currEnds[0]).get(currEnds[1]);
+				
+				Face pentagon = new Face(5);
+				pentagon.setAllVertexIndices(prevVertices[1], prevVertices[0],
+						currEnds[0], currVertices[0], currVertices[1]);
+				quintoPolyhedron.addFace(pentagon);
+				
+				centralFace.setVertexIndex(centralIndex++, currVertices[1]);
+				
+				// Update previous vertex indices
+				prevVertices = currVertices;
+			}
+			quintoPolyhedron.addFace(centralFace);
+		}
+		
+		quintoPolyhedron.setVertexNormalsToFaceNormals();
+		return quintoPolyhedron;
+	}
+	
+	/**
+	 * Computes the "lace" polyhedron of this polyhedron. Like loft, but has
+	 * on each face an antiprism of the original face instead of a prism.
+	 * 
+	 * @return The lace polyhedron.
+	 */
+	public Polyhedron lace() {
+		Polyhedron lacePolyhedron = new Polyhedron();
+		for (Vector3d vertexPos : vertexPositions) {
+			lacePolyhedron.addVertexPosition(new Vector3d(vertexPos));
+		}
+		
+		// Generate new vertices
+		int vertexIndex = lacePolyhedron.numVertexPositions();
+		for (Face face : faces) {
+			Face twist = new Face(face.numVertices());
+			int[] newFaceVertices = new int[face.numVertices()];
+			
+			Vector3d centroid = face.centroid();
+			Edge[] edges = face.getEdges();
+			for (int i = 0 ; i < edges.length ; i++) {
+				Vector3d edgeMidpt = edges[i].midpoint();
+				
+				Vector3d fromCentroid = new Vector3d();
+				fromCentroid.sub(edgeMidpt, centroid);
+				fromCentroid.scale(0.3); // 0 < arbitrary scale factor < 1
+				
+				Vector3d newVertex = new Vector3d();
+				newVertex.add(centroid, fromCentroid);
+				
+				lacePolyhedron.addVertexPosition(newVertex);
+				newFaceVertices[i] = vertexIndex;
+				twist.setVertexIndex(i, vertexIndex++);
+			}
+			
+			lacePolyhedron.addFace(twist);
+			
+			// Generate triangle faces between twist and original
+			for (int i = 0 ; i < edges.length ; i++) {
+				int[] endsi = edges[i].getEnds();
+				int currVertex = newFaceVertices[i];
+				int nextVertex = newFaceVertices[(i + 1) % newFaceVertices.length];
+				
+				Face largeTriangle = new Face(3);
+				Face smallTriangle = new Face(3);
+				largeTriangle.setAllVertexIndices(currVertex, endsi[0], endsi[1]);
+				smallTriangle.setAllVertexIndices(nextVertex, currVertex, endsi[1]);
+				
+				lacePolyhedron.addFaces(largeTriangle, smallTriangle);
+			}
+		}
+		
+		lacePolyhedron.setVertexNormalsToFaceNormals();
+		return lacePolyhedron;
+	}
+	
+	/**
+	 * Computes the "stake" polyhedron of this polyhedron. Like lace, but
+	 * instead of having a central face, there is a central vertex and 
+	 * quadrilaterals around the center.
+	 * 
+	 * @return The stake polyhedron.
+	 */
+	public Polyhedron stake() {
+		Polyhedron stakePolyhedron = new Polyhedron();
+		for (Vector3d vertexPos : vertexPositions) {
+			stakePolyhedron.addVertexPosition(new Vector3d(vertexPos));
+		}
+		
+		// Generate new vertices
+		int vertexIndex = stakePolyhedron.numVertexPositions();
+		for (Face face : faces) {
+			int[] newFaceVertices = new int[face.numVertices()];
+			
+			Vector3d centroid = face.centroid();
+			stakePolyhedron.addVertexPosition(centroid);
+			int centroidIndex = vertexIndex++;
+			
+			Edge[] edges = face.getEdges();
+			for (int i = 0 ; i < edges.length ; i++) {
+				Vector3d edgeMidpt = edges[i].midpoint();
+				
+				Vector3d fromCentroid = new Vector3d();
+				fromCentroid.sub(edgeMidpt, centroid);
+				fromCentroid.scale(0.3); // 0 < arbitrary scale factor < 1
+				
+				Vector3d newVertex = new Vector3d();
+				newVertex.add(centroid, fromCentroid);
+				
+				stakePolyhedron.addVertexPosition(newVertex);
+				newFaceVertices[i] = vertexIndex++;
+			}
+			
+			// Generate the quads and triangles on this face
+			for (int i = 0 ; i < edges.length ; i++) {
+				int[] endsi = edges[i].getEnds();
+				int currVertex = newFaceVertices[i];
+				int nextVertex = newFaceVertices[(i + 1) % newFaceVertices.length];
+				
+				Face triangle = new Face(3);
+				Face quad = new Face(4);
+				triangle.setAllVertexIndices(currVertex, endsi[0], endsi[1]);
+				quad.setAllVertexIndices(nextVertex, centroidIndex, currVertex, endsi[1]);
+				
+				stakePolyhedron.addFaces(triangle, quad);
+			}
+		}
+		
+		stakePolyhedron.setVertexNormalsToFaceNormals();
+		return stakePolyhedron;
 	}
 	
 }
