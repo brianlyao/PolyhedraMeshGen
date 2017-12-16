@@ -28,10 +28,13 @@ public class Icosphere extends Polyhedron {
 			icosphere = icosphere.subdivide();
 		}
 		addFaces(icosphere.getFaces());
+		
+		// Scale all vertices onto the sphere.
 		for (Vector3d vertexPos : icosphere.getVertexPositions()) {
 			vertexPos.scale(circumradius / vertexPos.length());
 			addVertexPosition(vertexPos);
 		}
+		
 		setVertexNormalsToFaceNormals();
 	}
 	
