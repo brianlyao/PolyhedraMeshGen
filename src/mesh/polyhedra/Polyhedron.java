@@ -13,6 +13,7 @@ import mesh.struct.EdgeToAdjacentFace;
 import mesh.struct.OrderedVertexToAdjacentEdge;
 import mesh.struct.OrderedVertexToAdjacentFace;
 import util.Canonicalize;
+import util.PolyhedraUtils;
 
 /**
  * A class for generic closed polyhedra meshes. The class contains
@@ -321,7 +322,9 @@ public class Polyhedron extends Mesh {
 			gyroPolyhedron.addVertexPosition(new Vector3d(vertexPos));
 		}
 		
-		Map<Integer, Map<Integer, int[]>> newEdges = new HashMap<>();
+		// Create new vertices on edges
+		Map<Integer, Map<Integer, int[]>> newVertices =
+				PolyhedraUtils.divideEdges(this, gyroPolyhedron, 3);
 		
 		// Generate one vertex per face
 		Map<Face, Integer> centroidIndices = new HashMap<>();
@@ -333,45 +336,15 @@ public class Polyhedron extends Mesh {
 			centroidIndices.put(face, centroidIndex);
 		}
 		
-		for (Edge edge : this.getEdges()) {
-			// Generate two new vertices per edge
-			Vector3d[] endPositions = edge.getEndLocations();
-			Vector3d diff = new Vector3d();
-			diff.sub(endPositions[1], endPositions[0]);
-			diff.scale(1.0 / 3.0);
-			
-			Vector3d firstNewVertex = new Vector3d();
-			firstNewVertex.add(endPositions[0], diff);
-			
-			Vector3d secondNewVertex = new Vector3d();
-			secondNewVertex.add(firstNewVertex, diff);
-			
-			int firstIndex = gyroPolyhedron.vertexPositions.size();
-			int secondIndex = firstIndex + 1;
-			gyroPolyhedron.addVertexPositions(firstNewVertex, secondNewVertex);
-			
-			// Map the existing edge to the new vertices along it
-			int[] ends = edge.getEnds();
-			if (newEdges.get(ends[0]) == null) {
-				newEdges.put(ends[0], new HashMap<Integer, int[]>());
-			}
-			newEdges.get(ends[0]).put(ends[1], new int[] {firstIndex, secondIndex});
-			
-			if (newEdges.get(ends[1]) == null) {
-				newEdges.put(ends[1], new HashMap<Integer, int[]>());
-			}
-			newEdges.get(ends[1]).put(ends[0], new int[] {secondIndex, firstIndex});
-		}
-		
 		// Construct pentagonal faces
 		for (Face face : faces) {
 			Edge[] faceEdges = face.getEdges();
 			
 			int[] prevEnds = faceEdges[faceEdges.length - 1].getEnds();
-			int[] prevIndices = newEdges.get(prevEnds[0]).get(prevEnds[1]);
+			int[] prevIndices = newVertices.get(prevEnds[0]).get(prevEnds[1]);
 			for (Edge faceEdge : faceEdges) {
 				int[] ends = faceEdge.getEnds();
-				int[] edgeIndices = newEdges.get(ends[0]).get(ends[1]);
+				int[] edgeIndices = newVertices.get(ends[0]).get(ends[1]);
 				
 				Face pentagon = new Face(5);
 				pentagon.setAllVertexIndices(centroidIndices.get(face), prevIndices[1],
@@ -765,6 +738,138 @@ public class Polyhedron extends Mesh {
 		
 		stakePolyhedron.setVertexNormalsToFaceNormals();
 		return stakePolyhedron;
+	}
+	
+	/**
+	 * Computes the "propellor" polyhedron of this polyhedron. It is like gyro,
+	 * but instead of having a central vertex we have a central face. This
+	 * creates quadrilateral faces instead of pentagonal faces.
+	 * 
+	 * @return The propellor polyhedron.
+	 */
+	public Polyhedron propellor() {
+		Polyhedron propellorPolyhedron = new Polyhedron();
+		for (Vector3d vertexPos : vertexPositions) {
+			propellorPolyhedron.addVertexPosition(new Vector3d(vertexPos));
+		}
+		
+		// Create new vertices on edges
+		Map<Integer, Map<Integer, int[]>> newVertices =
+				PolyhedraUtils.divideEdges(this, propellorPolyhedron, 3);
+		
+		// Create quadrilateral faces and one central face on each face
+		for (Face face : faces) {
+			Edge[] faceEdges = face.getEdges();
+			
+			Face centralFace = new Face(face.numVertices());
+			int[] prevEnds = faceEdges[faceEdges.length - 1].getEnds();
+			int[] prevEdgeVertices = newVertices.get(prevEnds[0]).get(prevEnds[1]);
+			for (int i = 0 ; i < faceEdges.length ; i++) {
+				int[] ends = faceEdges[i].getEnds();
+				int[] newEdgeVertices = newVertices.get(ends[0]).get(ends[1]);
+				
+				Face quad = new Face(4);
+				quad.setAllVertexIndices(ends[0], newEdgeVertices[0],
+						prevEdgeVertices[0], prevEdgeVertices[1]);
+				propellorPolyhedron.addFace(quad);
+				
+				centralFace.setVertexIndex(i, newEdgeVertices[0]);
+				
+				prevEnds = ends;
+				prevEdgeVertices = newEdgeVertices;
+			}
+			
+			propellorPolyhedron.addFace(centralFace);
+		}
+		
+		propellorPolyhedron.setVertexNormalsToFaceNormals();
+		return propellorPolyhedron;
+	}
+	
+	/**
+	 * Computes the "whirl" polyhedron of this polyhedron. Forms hexagon
+	 * faces at each edge, with a small copy of the original face at the
+	 * center of the original face.
+	 * 
+	 * @return The whirl polyhedron.
+	 */
+	public Polyhedron whirl() {
+		Polyhedron whirlPolyhedron = new Polyhedron();
+		for (Vector3d vertexPos : vertexPositions) {
+			whirlPolyhedron.addVertexPosition(new Vector3d(vertexPos));
+		}
+		
+		// Create new vertices on edges
+		Map<Integer, Map<Integer, int[]>> newVertices =
+				PolyhedraUtils.divideEdges(this, whirlPolyhedron, 3);
+		
+		// Generate vertices near the center of each face
+		Map<Face, int[]> centerVertices = new HashMap<>();
+		int vertexIndex = whirlPolyhedron.vertexPositions.size();
+		for (Face face : faces) {
+			int[] newCenterIndices = new int[face.numVertices()];
+			Vector3d centroid = face.centroid();
+			int i = 0;
+			for (Edge edge : face.getEdges()) {
+				int[] ends = edge.getEnds();
+				int[] edgeVertices = newVertices.get(ends[0]).get(ends[1]);
+				Vector3d edgePoint = whirlPolyhedron.vertexPositions.get(edgeVertices[1]);
+				Vector3d diff = new Vector3d();
+				diff.sub(edgePoint, centroid);
+				diff.scale(0.3); // 0 < arbitrary scale factor < 1
+				
+				Vector3d newFacePoint = new Vector3d();
+				newFacePoint.add(centroid, diff);
+				
+				whirlPolyhedron.addVertexPosition(newFacePoint);
+				newCenterIndices[i++] = vertexIndex++;
+			}
+			
+			centerVertices.put(face, newCenterIndices);
+		}
+		
+		// Generate hexagonal faces and central face
+		for (Face face : faces) {
+			Face centralFace = new Face(face.numVertices());
+			
+			Edge[] faceEdges = face.getEdges();
+			int[] centralVertices = centerVertices.get(face);
+			int[] pEnds = faceEdges[faceEdges.length - 1].getEnds();
+			int[] prevEdgeVertices = newVertices.get(pEnds[0]).get(pEnds[1]);
+			int prevCenterIndex = centralVertices[centralVertices.length - 1];
+			for (int i = 0 ; i < face.numVertices() ; i++) {
+				int[] ends = faceEdges[i].getEnds();
+				int[] edgeVertices = newVertices.get(ends[0]).get(ends[1]);
+				int currCenterIndex = centralVertices[i];
+				
+				Face hexagon = new Face(6);
+				hexagon.setAllVertexIndices(ends[0], edgeVertices[0],
+						edgeVertices[1], currCenterIndex, prevCenterIndex,
+						prevEdgeVertices[1]);
+				whirlPolyhedron.addFace(hexagon);
+				
+				centralFace.setVertexIndex(i, currCenterIndex);
+				
+				prevEdgeVertices = edgeVertices;
+				prevCenterIndex = currCenterIndex;
+			}
+			
+			whirlPolyhedron.addFace(centralFace);
+		}
+		
+		whirlPolyhedron.setVertexNormalsToFaceNormals();
+		return whirlPolyhedron;
+	}
+
+	/**
+	 * Computes the "volute" polyhedron of this polyhedron. Equivalent to a
+	 * snub operation followed by kis on the original faces. This is the dual
+	 * of whirl.
+	 * 
+	 * @return The volute polyhedron.
+	 */
+	public Polyhedron volute() {
+		return this.whirl().dual();
 	}
 	
 }
