@@ -5,6 +5,7 @@ import java.util.Map;
 
 import javax.vecmath.Vector3d;
 
+import math.VectorMath;
 import mesh.Edge;
 import mesh.polyhedra.Polyhedron;
 
@@ -40,22 +41,17 @@ public class PolyhedraUtils {
 		int vertexIndex = modify.getVertexPositions().size(); // next index
 		for (Edge edge : source.getEdges()) {
 			int[] ends = edge.getEnds();
-			
-			// Generate two new vertices per edge
+
 			Vector3d[] endPositions = edge.getEndLocations();
-			Vector3d diff = new Vector3d();
-			diff.sub(endPositions[1], endPositions[0]);
-			diff.scale(1.0 / segments);
 			
 			int[] newIndices = new int[segments - 1];
 			int[] newIndicesReverse = new int[segments - 1];
 			
 			// Generate and add vertices for this edge
+			double denom = (double) segments;
 			for (int i = 1 ; i <= segments - 1 ; i++) {
-				Vector3d scaledDiff = new Vector3d();
-				scaledDiff.scale(i, diff);
-				Vector3d newVertex = new Vector3d();
-				newVertex.add(endPositions[0], scaledDiff);
+				Vector3d newVertex = VectorMath.diffScale(endPositions[0],
+						endPositions[1], i / denom);
 				
 				modify.addVertexPosition(newVertex);
 				newIndices[i - 1] = vertexIndex;
@@ -64,14 +60,10 @@ public class PolyhedraUtils {
 			}
 			
 			// Map the existing edge to the new vertices along it
-			if (newVertices.get(ends[0]) == null) {
-				newVertices.put(ends[0], new HashMap<Integer, int[]>());
-			}
+			newVertices.computeIfAbsent(ends[0], a -> new HashMap<Integer, int[]>());
 			newVertices.get(ends[0]).put(ends[1], newIndices);
-			
-			if (newVertices.get(ends[1]) == null) {
-				newVertices.put(ends[1], new HashMap<Integer, int[]>());
-			}
+
+			newVertices.computeIfAbsent(ends[1], a -> new HashMap<Integer, int[]>());
 			newVertices.get(ends[1]).put(ends[0], newIndicesReverse);
 		}
 		

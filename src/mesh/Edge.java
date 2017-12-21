@@ -46,10 +46,30 @@ public class Edge {
 	public int[] getEnds() {
 		return ends;
 	}
+
+	/**
+	 * Given the vertex index of one of the endpoints, return the vertex index
+	 * of the other endpoint.
+	 *
+	 * @param end The vertex index of one of the endpoints.
+	 * @return The vertex index of the other endpoint.
+	 * @throws IllegalArgumentException If end is not one of the endpoints of
+	 *                                  this edge.
+	 */
+	public int getOtherEnd(int end) {
+		if (ends[0] == end) {
+			return ends[1];
+		} else if (ends[1] == end) {
+			return ends[0];
+		} else {
+			throw new IllegalArgumentException(String.format("Vertex %d is not" +
+					" an endpoint of this edge.", end));
+		}
+	}
 	
 	/**
-	 * Get the locations of the endpoints of this edge. setMesh() must be
-	 * called before this one is.
+	 * Get the locations of the endpoints of this edge. setMesh() must have
+	 * been called for this to succeed.
 	 * 
 	 * @return The locations of the endpoints of this edge.
 	 */
@@ -58,6 +78,19 @@ public class Edge {
 		endLocations[0] = mesh.vertexPositions.get(ends[0]);
 		endLocations[1] = mesh.vertexPositions.get(ends[1]);
 		return endLocations;
+	}
+
+	/**
+	 * Given the vertex index of one of the endpoints, return the position of
+	 * the other endpoint. setMesh() must have been called for this to succeed.
+	 *
+	 * @param end The vertex index of one of the endpoints.
+	 * @return The 3D location of the other endpoint.
+	 * @throws IllegalArgumentException If end is not one of the endpoints of
+	 *                                  this edge.
+	 */
+	public Vector3d getOtherLocation(int end) {
+		return mesh.vertexPositions.get(getOtherEnd(end));
 	}
 	
 	/**

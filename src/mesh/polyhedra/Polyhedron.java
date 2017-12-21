@@ -1,11 +1,13 @@
 package mesh.polyhedra;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import javax.vecmath.Vector3d;
 
+import math.VectorMath;
 import mesh.Edge;
 import mesh.Face;
 import mesh.Mesh;
@@ -208,7 +210,47 @@ public class Polyhedron extends Mesh {
 	public Polyhedron kis() {
 		return this.dual().needle();
 	}
-	
+
+	/**
+	 * Same as kis, but only divides faces with exactly n sides. All other
+	 * faces in the original polyhedron are preserved.
+	 *
+	 * @param n The number of sides on the faces we want to kis.
+	 * @return The polyhedron with kis applied to faces with n sides.
+	 */
+	public Polyhedron kis(int n) {
+		Polyhedron kisPolyhedron = new Polyhedron();
+		for (Vector3d vertexPos : vertexPositions) {
+			kisPolyhedron.addVertexPosition(new Vector3d(vertexPos));
+		}
+
+		int vertexIndex = kisPolyhedron.numVertexPositions();
+		for (Face face : faces) {
+			if (face.numVertices() == n) {
+				// Only kis if the face has the desired number of sides
+				Vector3d centroid = face.centroid();
+				kisPolyhedron.addVertexPosition(centroid);
+
+				int prevVertIndex = face.getVertexIndex(face.numVertices() - 1);
+				for (int faceVertIndex : face.getVertexIndices()) {
+					Face triangle = new Face(3);
+					triangle.setAllVertexIndices(vertexIndex, prevVertIndex,
+							faceVertIndex);
+					kisPolyhedron.addFace(triangle);
+
+					prevVertIndex = faceVertIndex;
+				}
+
+				vertexIndex++;
+			} else {
+			    // Otherwise, use original face
+                kisPolyhedron.addFace(new Face(face));
+            }
+		}
+
+		return kisPolyhedron;
+	}
+
 	/**
 	 * Computes the truncated polyhedron of this polyhedron. Each vertex is
 	 * truncated, leaving behind a polygon face instead.
@@ -217,6 +259,77 @@ public class Polyhedron extends Mesh {
 	 */
 	public Polyhedron truncate() {
 		return this.needle().dual();
+	}
+
+	/**
+	 * Same as truncate, but only truncates vertices with exactly n incident
+	 * faces. All other vertices in the original polyhedron are preserved.
+	 *
+	 * @param n The order of vertices to truncate.
+	 * @return The polyhedron with order n vertices truncated.
+	 */
+	public Polyhedron truncate(int n) {
+		Polyhedron truncatePolyhedron = new Polyhedron();
+
+		// Compute new vertices
+		Map<Integer, Map<Integer, Integer>> edgeVertices = new HashMap<>();
+		Map<Integer, Integer> oldToNewIndices = new HashMap<>();
+		OrderedVertexToAdjacentEdge ov2ae = new OrderedVertexToAdjacentEdge(this);
+		int vertexIndex = 0;
+		for (int i = 0 ; i < vertexPositions.size() ; i++) {
+			List<Edge> adjEdges = ov2ae.getAdjacentEdges(i);
+			if (adjEdges.size() == n) {
+				// Only truncate if the vertex has the desired order
+				Face truncateFace = new Face(n);
+				int faceVertexIndex = 0;
+				Vector3d vertPos = vertexPositions.get(i);
+				for (Edge edge : adjEdges) {
+					Vector3d otherPos = edge.getOtherLocation(i);
+					Vector3d newVert = VectorMath.diffScale(vertPos, otherPos,
+							0.3); // 0 < arbitrary scale factor < 0.5
+
+					truncatePolyhedron.addVertexPosition(newVert);
+					edgeVertices.computeIfAbsent(i, a -> new HashMap<Integer, Integer>());
+					edgeVertices.get(i).put(edge.getOtherEnd(i), vertexIndex);
+					truncateFace.setVertexIndex(faceVertexIndex++, vertexIndex);
+					vertexIndex++;
+				}
+
+				truncatePolyhedron.addFace(truncateFace);
+			} else if (!oldToNewIndices.containsKey(i)) {
+				// Keep old vertex; only add it once
+				truncatePolyhedron.addVertexPosition(vertexPositions.get(i));
+				oldToNewIndices.put(i, vertexIndex++);
+			}
+		}
+
+		for (Face face : faces) {
+			List<Integer> newFaceVertices = new ArrayList<>();
+			int prevIndex = face.getVertexIndex(face.numVertices() - 1);
+			for (int j = 0 ; j < face.numVertices() ; j++) {
+				int currIndex = face.getVertexIndex(j);
+				if (edgeVertices.containsKey(currIndex)) {
+					// If the vertex was truncated, use two new vertices
+					int nextIndex = face.getVertexIndex((j + 1) % face.numVertices());
+					newFaceVertices.add(edgeVertices.get(currIndex).get(prevIndex));
+					newFaceVertices.add(edgeVertices.get(currIndex).get(nextIndex));
+				} else {
+					// Otherwise, just use old vertex
+					newFaceVertices.add(oldToNewIndices.get(currIndex));
+				}
+
+				// Update previous index
+				prevIndex = currIndex;
+			}
+
+			Face newFace = new Face(newFaceVertices.size());
+			for (int k = 0 ; k < newFaceVertices.size() ; k++) {
+				newFace.setVertexIndex(k, newFaceVertices.get(k));
+			}
+			truncatePolyhedron.addFace(newFace);
+		}
+
+		return truncatePolyhedron;
 	}
 	
 	/**
@@ -279,7 +392,7 @@ public class Polyhedron extends Mesh {
 	/**
 	 * Computes the "zip" polyhedron of this polyhedron. Also known as a
 	 * bitruncation operation, this is equivalent to the truncation of
-	 * the dual polyhedron.
+	 * the dual polyhedron and the dual of kis.
 	 * 
 	 * @return The zip polyhedron.
 	 */
