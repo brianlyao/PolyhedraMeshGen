@@ -248,6 +248,7 @@ public class Polyhedron extends Mesh {
             }
 		}
 
+		kisPolyhedron.setVertexNormalsToFaceNormals();
 		return kisPolyhedron;
 	}
 
@@ -285,7 +286,7 @@ public class Polyhedron extends Mesh {
 				Vector3d vertPos = vertexPositions.get(i);
 				for (Edge edge : adjEdges) {
 					Vector3d otherPos = edge.getOtherLocation(i);
-					Vector3d newVert = VectorMath.diffScale(vertPos, otherPos,
+					Vector3d newVert = VectorMath.interpolate(vertPos, otherPos,
 							0.3); // 0 < arbitrary scale factor < 0.5
 
 					truncatePolyhedron.addVertexPosition(newVert);
@@ -329,6 +330,7 @@ public class Polyhedron extends Mesh {
 			truncatePolyhedron.addFace(newFace);
 		}
 
+		truncatePolyhedron.setVertexNormalsToFaceNormals();
 		return truncatePolyhedron;
 	}
 	

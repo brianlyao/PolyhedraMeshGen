@@ -45,7 +45,7 @@ public class VectorMath {
 	 * @param t     The parameter (0 <= t <= 1).
 	 * @return The interpolation at the parameter t.
 	 */
-	public static Vector3d diffScale(Vector3d start, Vector3d end, double t) {
+	public static Vector3d interpolate(Vector3d start, Vector3d end, double t) {
 		Vector3d diff = diff(start, end);
 		diff.scale(t);
 		Vector3d newPoint = new Vector3d();

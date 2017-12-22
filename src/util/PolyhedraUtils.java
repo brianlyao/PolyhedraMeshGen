@@ -50,7 +50,7 @@ public class PolyhedraUtils {
 			// Generate and add vertices for this edge
 			double denom = (double) segments;
 			for (int i = 1 ; i <= segments - 1 ; i++) {
-				Vector3d newVertex = VectorMath.diffScale(endPositions[0],
+				Vector3d newVertex = VectorMath.interpolate(endPositions[0],
 						endPositions[1], i / denom);
 				
 				modify.addVertexPosition(newVertex);
