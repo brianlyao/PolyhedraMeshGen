@@ -19,7 +19,20 @@ public class VectorMath {
 	 * @return True if the vector is approximately zero.
 	 */
 	public static boolean isZero(Vector3d vector) {
-		return Math.abs(vector.x) < EPSILON && Math.abs(vector.y) < EPSILON && Math.abs(vector.z) < EPSILON;
+		return Math.abs(vector.x) < EPSILON &&
+				Math.abs(vector.y) < EPSILON && Math.abs(vector.z) < EPSILON;
+	}
+
+	/**
+	 * Returns true if the given vector has at least one component which is
+	 * NaN.
+	 *
+	 * @param vector The vector whose components we are comparing to NaN.
+	 * @return True if at least one component is NaN.
+	 */
+	public static boolean isNaN(Vector3d vector) {
+		return Double.isNaN(vector.x) || Double.isNaN(vector.y) ||
+				Double.isNaN(vector.z);
 	}
 
 	/**
