@@ -448,7 +448,7 @@ public class Polyhedron extends Mesh {
 		
 		// Create new vertices on edges
 		Map<Integer, Map<Integer, int[]>> newVertices =
-				PolyhedraUtils.divideEdges(this, gyroPolyhedron, 3);
+				PolyhedraUtils.subdivideEdges(this, gyroPolyhedron, 3);
 		
 		// Generate one vertex per face
 		Map<Face, Integer> centroidIndices = new HashMap<>();
@@ -515,7 +515,7 @@ public class Polyhedron extends Mesh {
 	 * @return The medial polyhedron.
 	 */
 	public Polyhedron medial() {
-		return this.bevel().dual();
+		return this.medial(2);
 	}
 	
 	/**
@@ -712,44 +712,14 @@ public class Polyhedron extends Mesh {
 		
 		// Create new vertices at the midpoint of each edge and toward the
 		// face's centroid
-		Map<Integer, Map<Integer, int[]>> newVertices = new HashMap<>();
+		Map<Integer, Map<Integer, Integer>> edgeToVertex =
+				PolyhedraUtils.addEdgeToCentroidVertices(this, quintoPolyhedron);
+
 		int vertexIndex = quintoPolyhedron.numVertexPositions();
-		for (Face face : faces) {
-			Vector3d centroid = face.centroid();
-			
-			Edge[] edges = face.getEdges();
-			for (int i = 0 ; i < edges.length ; i++) {
-				int[] endsi = edges[i].getEnds();
-				if (!newVertices.containsKey(endsi[0])) {
-					newVertices.put(endsi[0], new HashMap<Integer, int[]>());
-				}
-				
-				// The indices of the new vertices
-				int[] newIndices = new int[2];
-				
-				Vector3d edgeMidpt = edges[i].midpoint();
-				
-				Vector3d fromCentroid = new Vector3d();
-				fromCentroid.sub(edgeMidpt, centroid);
-				fromCentroid.scale(0.3); // 0 < arbitrary scale factor < 1
-				
-				Vector3d newVertex = new Vector3d();
-				newVertex.add(centroid, fromCentroid);
-				
-				// Check if the midpoint of the edge has already been added
-				if (newVertices.containsKey(endsi[1]) &&
-						newVertices.get(endsi[1]).containsKey(endsi[0])) {
-					int midptVertex = newVertices.get(endsi[1]).get(endsi[0])[0];
-					newIndices[0] = midptVertex;
-				} else {
-					quintoPolyhedron.addVertexPosition(edgeMidpt);
-					newIndices[0] = vertexIndex++;
-				}
-				
-				quintoPolyhedron.addVertexPosition(newVertex);
-				newIndices[1] = vertexIndex++;
-				newVertices.get(endsi[0]).put(endsi[1], newIndices);
-			}
+		Map<Edge, Integer> midptVertices = new HashMap<>();
+		for (Edge edge : this.getEdges()) {
+			quintoPolyhedron.addVertexPosition(edge.midpoint());
+			midptVertices.put(edge, vertexIndex++);
 		}
 		
 		// Generate new faces
@@ -758,21 +728,24 @@ public class Polyhedron extends Mesh {
 			Edge[] edges = face.getEdges();
 			
 			int[] prevEnds = edges[edges.length - 1].getEnds();
-			int[] prevVertices = newVertices.get(prevEnds[0]).get(prevEnds[1]);
+			int prevVertex = edgeToVertex.get(prevEnds[0]).get(prevEnds[1]);
+			int prevMidpt = midptVertices.get(edges[edges.length - 1]);
 			int centralIndex = 0;
 			for (Edge currEdge : edges) {
 				int[] currEnds = currEdge.getEnds();
-				int[] currVertices = newVertices.get(currEnds[0]).get(currEnds[1]);
+				int currVertex = edgeToVertex.get(currEnds[0]).get(currEnds[1]);
+				int currMidpt = midptVertices.get(currEdge);
 				
 				Face pentagon = new Face(5);
-				pentagon.setAllVertexIndices(prevVertices[1], prevVertices[0],
-						currEnds[0], currVertices[0], currVertices[1]);
+				pentagon.setAllVertexIndices(prevVertex, prevMidpt, currEnds[0],
+						currMidpt, currVertex);
 				quintoPolyhedron.addFace(pentagon);
 				
-				centralFace.setVertexIndex(centralIndex++, currVertices[1]);
+				centralFace.setVertexIndex(centralIndex++, currVertex);
 				
 				// Update previous vertex indices
-				prevVertices = currVertices;
+				prevVertex = currVertex;
+				prevMidpt = currMidpt;
 			}
 			quintoPolyhedron.addFace(centralFace);
 		}
@@ -829,61 +802,50 @@ public class Polyhedron extends Mesh {
 			lacePolyhedron.addVertexPosition(new Vector3d(vertexPos));
 		}
 
-		// Generate new vertices and new faces
-		Map<Integer, Map<Integer, Integer>> edgeToVertex = new HashMap<>();
-		int vertexIndex = lacePolyhedron.numVertexPositions();
+		// Generate new vertices
+		Map<Integer, Map<Integer, Integer>> edgeToVertex =
+				PolyhedraUtils.addEdgeToCentroidVertices(this, lacePolyhedron);
+
+		if (joined) {
+			PolyhedraUtils.addRhombicFacesAtEdges(this, lacePolyhedron,
+					edgeToVertex);
+		}
+
+		// Generate new faces
 		for (Face face : faces) {
 			if (ignore || face.numVertices() == n) {
 				Face twist = new Face(face.numVertices());
-				int[] newFaceVertices = new int[face.numVertices()];
-
-				Vector3d centroid = face.centroid();
 				Edge[] edges = face.getEdges();
+
 				for (int i = 0; i < edges.length; i++) {
-					Vector3d edgeMidpt = edges[i].midpoint();
-					Vector3d newVertex = VectorMath.interpolate(edgeMidpt,
-							centroid, 0.3);
+					// Build face at center of each original face
+					int[] ends = edges[i].getEnds();
+					int newVertex = edgeToVertex.get(ends[0]).get(ends[1]);
+					twist.setVertexIndex(i, newVertex);
 
-					lacePolyhedron.addVertexPosition(newVertex);
-					newFaceVertices[i] = vertexIndex;
-					twist.setVertexIndex(i, vertexIndex++);
-				}
-
-				if (joined) {
-					// If joined lace, map edges to new vertices
-					for (int i = 0 ; i < edges.length ; i++) {
-						int[] ends = edges[i].getEnds();
-						edgeToVertex.computeIfAbsent(ends[0],
-								a -> new HashMap<Integer, Integer>());
-						edgeToVertex.get(ends[0]).put(ends[1], newFaceVertices[i]);
-					}
-				}
-
-				lacePolyhedron.addFace(twist);
-
-				// Always generate triangles from vertices to central face
-				for (int i = 0; i < edges.length; i++) {
-					int[] endsi = edges[i].getEnds();
-					int currVertex = newFaceVertices[i];
-					int nextInd = (i + 1) % newFaceVertices.length;
-					int nextVertex = newFaceVertices[nextInd];
+					// Always generate triangles from vertices to central face
+					int nextInd = (i + 1) % edges.length;
+					int[] nextEnds = edges[nextInd].getEnds();
+					int nextNewVertex = edgeToVertex.get(nextEnds[0]).get(nextEnds[1]);
 
 					Face smallTriangle = new Face(3);
-					smallTriangle.setAllVertexIndices(nextVertex,
-							currVertex, endsi[1]);
+					smallTriangle.setAllVertexIndices(nextNewVertex,
+							newVertex, ends[1]);
 
 					lacePolyhedron.addFace(smallTriangle);
 				}
 
+				lacePolyhedron.addFace(twist);
+
 				if (!joined) {
 					// If not joined, generate triangle faces
-					for (int i = 0; i < edges.length; i++) {
-						int[] endsi = edges[i].getEnds();
-						int currVertex = newFaceVertices[i];
+					for (Edge edge : edges) {
+						int[] ends = edge.getEnds();
+						int currVertex = edgeToVertex.get(ends[0]).get(ends[1]);
 
 						Face largeTriangle = new Face(3);
 						largeTriangle.setAllVertexIndices(currVertex,
-								endsi[0], endsi[1]);
+								ends[0], ends[1]);
 
 						lacePolyhedron.addFace(largeTriangle);
 					}
@@ -891,19 +853,6 @@ public class Polyhedron extends Mesh {
 			} else {
 				// Keep original face
 				lacePolyhedron.addFace(new Face(face));
-			}
-		}
-
-		if (joined) {
-			// If joined lace, generate quad faces at edges
-			for (Edge edge : this.getEdges()) {
-				Face quad = new Face(4);
-				int[] ends = edge.getEnds();
-				int v0 = edgeToVertex.get(ends[0]).get(ends[1]);
-				int v2 = edgeToVertex.get(ends[1]).get(ends[0]);
-				quad.setAllVertexIndices(v0, ends[0], v2, ends[1]);
-
-				lacePolyhedron.addFace(quad);
 			}
 		}
 
@@ -948,40 +897,31 @@ public class Polyhedron extends Mesh {
 		}
 
 		// Generate new vertices
+		Map<Integer, Map<Integer, Integer>> edgeToVertex =
+				PolyhedraUtils.addEdgeToCentroidVertices(this, stakePolyhedron);
+
 		int vertexIndex = stakePolyhedron.numVertexPositions();
 		for (Face face : faces) {
 			if (ignore || face.numVertices() == n) {
-				int[] newFaceVertices = new int[face.numVertices()];
-
 				Vector3d centroid = face.centroid();
 				stakePolyhedron.addVertexPosition(centroid);
 				int centroidIndex = vertexIndex++;
 
 				Edge[] edges = face.getEdges();
-				for (int i = 0; i < edges.length; i++) {
-					Vector3d edgeMidpt = edges[i].midpoint();
-
-					Vector3d fromCentroid = new Vector3d();
-					fromCentroid.sub(edgeMidpt, centroid);
-					fromCentroid.scale(0.3); // 0 < arbitrary scale factor < 1
-
-					Vector3d newVertex = new Vector3d();
-					newVertex.add(centroid, fromCentroid);
-
-					stakePolyhedron.addVertexPosition(newVertex);
-					newFaceVertices[i] = vertexIndex++;
-				}
 
 				// Generate the quads and triangles on this face
 				for (int i = 0; i < edges.length; i++) {
-					int[] endsi = edges[i].getEnds();
-					int currVertex = newFaceVertices[i];
-					int nextVertex = newFaceVertices[(i + 1) % newFaceVertices.length];
+					int[] ends = edges[i].getEnds();
+					int currVertex = edgeToVertex.get(ends[0]).get(ends[1]);
+					int[] nextEnds = edges[(i + 1) % edges.length].getEnds();
+					int nextVertex = edgeToVertex.get(nextEnds[0])
+							.get(nextEnds[1]);
 
 					Face triangle = new Face(3);
 					Face quad = new Face(4);
-					triangle.setAllVertexIndices(currVertex, endsi[0], endsi[1]);
-					quad.setAllVertexIndices(nextVertex, centroidIndex, currVertex, endsi[1]);
+					triangle.setAllVertexIndices(currVertex, ends[0], ends[1]);
+					quad.setAllVertexIndices(nextVertex, centroidIndex,
+							currVertex, ends[1]);
 
 					stakePolyhedron.addFaces(triangle, quad);
 				}
@@ -993,6 +933,148 @@ public class Polyhedron extends Mesh {
 
 		stakePolyhedron.setVertexNormalsToFaceNormals();
 		return stakePolyhedron;
+	}
+
+	/**
+	 * Computes the "edge-medial" polyhedron of this polyhedron. Places a
+	 * vertex at the centroid of every face, and subdivides each edge into
+	 * n segments, with edges from these subdivision points to the centroid.
+	 *
+	 * For example, the "edge-medial-3" operator corresponds to n = 3.
+	 *
+	 * @param n The number of subdivisions on each edge.
+	 * @return The edge-medial polyhedron with n subdivisions per edge.
+	 */
+	public Polyhedron edgeMedial(int n) {
+		return medial(n, true);
+	}
+
+	/**
+	 * Computes the "joined-medial" polyhedron of this polyhedron. The same as
+	 * medial, but with rhombic faces im place of original edges.
+	 *
+	 * @return The joined-medial polyhedron.
+	 */
+	public Polyhedron joinedMedial() {
+		Polyhedron medialPolyhedron = new Polyhedron();
+		for (Vector3d vertexPos : vertexPositions) {
+			medialPolyhedron.addVertexPosition(new Vector3d(vertexPos));
+		}
+
+		// Generate new vertices and rhombic faces on original edges
+		Map<Integer, Map<Integer, Integer>> edgeToVertex =
+				PolyhedraUtils.addEdgeToCentroidVertices(this, medialPolyhedron);
+		PolyhedraUtils.addRhombicFacesAtEdges(this, medialPolyhedron,
+				edgeToVertex);
+
+		// Generate triangular faces
+		int vertexIndex = medialPolyhedron.numVertexPositions();
+		for (Face face : faces) {
+			Vector3d centroid = face.centroid();
+			medialPolyhedron.addVertexPosition(centroid);
+
+			Edge[] edges = face.getEdges();
+			int[] prevEnds = edges[edges.length - 1].getEnds();
+			int prevVertex = edgeToVertex.get(prevEnds[0]).get(prevEnds[1]);
+			for (Edge edge : edges) {
+				int[] ends = edge.getEnds();
+				int currVertex = edgeToVertex.get(ends[0]).get(ends[1]);
+
+				Face triangle1 = new Face(3);
+				Face triangle2 = new Face(3);
+				triangle1.setAllVertexIndices(vertexIndex, ends[0], currVertex);
+				triangle2.setAllVertexIndices(vertexIndex, prevVertex, ends[0]);
+
+				medialPolyhedron.addFaces(triangle1, triangle2);
+
+				prevVertex = currVertex;
+			}
+
+			vertexIndex++;
+		}
+
+		medialPolyhedron.setVertexNormalsToFaceNormals();
+		return medialPolyhedron;
+	}
+
+	/**
+	 * Generalized medial, parametrized on the number of subdivisions on each
+	 * edge. The regular medial operation corresponds to n = 2 subdivisions.
+	 *
+	 * @param n The number of subdivisions on each edge.
+	 * @return The medial polyhedron with n subdivisions per edge.
+	 */
+	public Polyhedron medial(int n) {
+		return medial(n, false);
+	}
+
+	/**
+	 * A helper method for computing edge-medial and medial (parametrized).
+	 *
+	 * @param n    The number of subdivisions per edge.
+	 * @param edge True if computing edge-medial, false if regular medial.
+	 * @return The medial polyhedron subjected to the input constraints.
+	 */
+	private Polyhedron medial(int n, boolean edge) {
+		Polyhedron medialPolyhedron = new Polyhedron();
+		for (Vector3d vertexPos : vertexPositions) {
+			medialPolyhedron.addVertexPosition(new Vector3d(vertexPos));
+		}
+
+		// Create new vertices on edges
+		Map<Integer, Map<Integer, int[]>> newVertices =
+				PolyhedraUtils.subdivideEdges(this, medialPolyhedron, n);
+
+		int vertexIndex = medialPolyhedron.numVertexPositions();
+		for (Face face : faces) {
+			Vector3d centroid = face.centroid();
+
+			Edge[] faceEdges = face.getEdges();
+
+			Edge prevEdge = faceEdges[faceEdges.length - 1];
+			int[] prevEnds = prevEdge.getEnds();
+			for (Edge currEdge : faceEdges) {
+				int[] currEnds = currEdge.getEnds();
+				int[] currNewVerts = newVertices.get(currEnds[0])
+						.get(currEnds[1]);
+
+				int prevLastVert = newVertices.get(prevEnds[0])
+						.get(prevEnds[1])[n - 2];
+				if (edge) {
+					// One quadrilateral face
+					Face quad = new Face(4);
+					quad.setAllVertexIndices(currEnds[0], currNewVerts[0],
+							vertexIndex, prevLastVert);
+
+					medialPolyhedron.addFace(quad);
+				} else {
+					// Two triangular faces
+					Face triangle1 = new Face(3);
+					Face triangle2 = new Face(3);
+					triangle1.setAllVertexIndices(currEnds[0], currNewVerts[0],
+							vertexIndex);
+					triangle2.setAllVertexIndices(vertexIndex, prevLastVert,
+							currEnds[0]);
+
+					medialPolyhedron.addFaces(triangle1, triangle2);
+				}
+
+				// Create new triangular faces at edges
+				for (int i = 0 ; i < currNewVerts.length - 1 ; i++) {
+					Face edgeTriangle = new Face(3);
+					edgeTriangle.setAllVertexIndices(vertexIndex,
+							currNewVerts[i], currNewVerts[i + 1]);
+
+					medialPolyhedron.addFace(edgeTriangle);
+				}
+			}
+
+			medialPolyhedron.addVertexPosition(centroid);
+			vertexIndex++;
+		}
+
+		medialPolyhedron.setVertexNormalsToFaceNormals();
+		return medialPolyhedron;
 	}
 	
 	/**
@@ -1010,7 +1092,7 @@ public class Polyhedron extends Mesh {
 		
 		// Create new vertices on edges
 		Map<Integer, Map<Integer, int[]>> newVertices =
-				PolyhedraUtils.divideEdges(this, propellorPolyhedron, 3);
+				PolyhedraUtils.subdivideEdges(this, propellorPolyhedron, 3);
 		
 		// Create quadrilateral faces and one central face on each face
 		for (Face face : faces) {
@@ -1056,7 +1138,7 @@ public class Polyhedron extends Mesh {
 		
 		// Create new vertices on edges
 		Map<Integer, Map<Integer, int[]>> newVertices =
-				PolyhedraUtils.divideEdges(this, whirlPolyhedron, 3);
+				PolyhedraUtils.subdivideEdges(this, whirlPolyhedron, 3);
 		
 		// Generate vertices near the center of each face
 		Map<Face, int[]> centerVertices = new HashMap<>();
