@@ -29,7 +29,7 @@ public class FaceToAdjacentFace {
 	 * @param mesh The mesh whose faces to use to create the mapping to neigbors.
 	 */
 	public FaceToAdjacentFace(Mesh mesh) {
-		neighborMap = new HashMap<Face, List<Face>>();
+		neighborMap = new HashMap<>();
 		
 		// Populate a map which maps vertices to neighboring faces
 		VertexToAdjacentFace v2af = new VertexToAdjacentFace(mesh);
@@ -37,8 +37,8 @@ public class FaceToAdjacentFace {
 		// Populate face neighbor map
 		for (Face face : mesh.getFaces()) {
 			List<Face> neighborList = new ArrayList<>();
-			for (int i = 0 ; i < face.numVertices() ; i++) {
-				int next = (i + 1) % face.numVertices();
+			for (int i = 0 ; i < face.getNumVertices() ; i++) {
+				int next = (i + 1) % face.getNumVertices();
 				Face neighbor = null;
 				
 				// Find neighbor by looking at intersection of the faces neighboring the ith

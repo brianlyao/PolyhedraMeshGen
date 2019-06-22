@@ -32,7 +32,7 @@ public class OrderedVertexToAdjacentEdge {
 	 * @param mesh The mesh whose geometry to use to create the mapping.
 	 */
 	public OrderedVertexToAdjacentEdge(Mesh mesh) {
-		vertexToEdge = new HashMap<Integer, List<Edge>>();
+		vertexToEdge = new HashMap<>();
 		
 		OrderedVertexToAdjacentFace ovtaf = new OrderedVertexToAdjacentFace(mesh);
 		for (int i : ovtaf.getVertices()) {
@@ -40,7 +40,7 @@ public class OrderedVertexToAdjacentEdge {
 			List<Edge> adjacentEdges = new ArrayList<>();
 			for (Face adjFace : adjacentFaces) {
 				int indOfI = -1;
-				for (int j = 0 ; j < adjFace.numVertices() ; j++) {
+				for (int j = 0 ; j < adjFace.getNumVertices() ; j++) {
 					if (adjFace.getVertexIndex(j) == i) {
 						indOfI = j;
 						break;
@@ -49,7 +49,7 @@ public class OrderedVertexToAdjacentEdge {
 				
 				int beforeI = indOfI - 1;
 				if (beforeI < 0) {
-					beforeI += adjFace.numVertices();
+					beforeI += adjFace.getNumVertices();
 				}
 				
 				Edge adjEdge = new Edge(adjFace.getVertexIndex(beforeI), i);

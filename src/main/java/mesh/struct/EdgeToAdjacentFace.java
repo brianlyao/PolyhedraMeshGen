@@ -25,7 +25,7 @@ public class EdgeToAdjacentFace {
 	 * @param mesh The mesh whose geometry to use to create the mapping.
 	 */
 	public EdgeToAdjacentFace(Mesh mesh) {
-		edgeToFace = new HashMap<Edge, Face[]>();
+		edgeToFace = new HashMap<>();
 		
 		// Compute mapping from edge to adjacent faces
 		for (Face face : mesh.getFaces()) {

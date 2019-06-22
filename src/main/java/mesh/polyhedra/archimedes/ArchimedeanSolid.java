@@ -7,6 +7,4 @@ import mesh.polyhedra.Polyhedron;
  * 
  * @author Brian Yao
  */
-public abstract class ArchimedeanSolid extends Polyhedron {
-	
-}
+public abstract class ArchimedeanSolid extends Polyhedron {}

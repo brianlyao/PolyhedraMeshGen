@@ -63,8 +63,8 @@ public class Cube extends PlatonicSolid {
 	 * @param circumradius The circumradius this polyhedron will have.
 	 * @param dummy        A dummy variable.
 	 */
-	public Cube(double circumRadius, boolean dummy) {
-		this(circumRadius / RADIUS_FACTOR);
+	public Cube(double circumradius, boolean dummy) {
+		this(circumradius / RADIUS_FACTOR);
 	}
 	
 }

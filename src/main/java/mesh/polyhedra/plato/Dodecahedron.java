@@ -10,7 +10,8 @@ import mesh.Face;
  * @author Brian Yao
  */
 public class Dodecahedron extends PlatonicSolid {
-	
+
+	private static final double GOLDEN_RATIO = (1.0 + Math.sqrt(5.0)) / 2.0;
 	private static final double RADIUS_FACTOR = Math.sqrt(3.0) / 4.0 * (1.0 + Math.sqrt(5));
 	
 	/**
@@ -23,8 +24,6 @@ public class Dodecahedron extends PlatonicSolid {
 		super(edgeLength);
 		
 		// Construct vertices
-		double goldenRatio = (1.0 + Math.sqrt(5.0)) / 2.0;
-		double goldenRatioInv = 1.0 / goldenRatio;
 		double edgeScaleFactor = edgeLength / (Math.sqrt(5.0) - 1.0);
 		Vector3d[] cubePoints = new Vector3d[8];
 		for (int i = 0 ; i < 8 ; i++) {
@@ -41,20 +40,20 @@ public class Dodecahedron extends PlatonicSolid {
 		Vector3d[] blueVertices = new Vector3d[4];
 		for (int i = 0 ; i < 4 ; i++) {
 			Vector3d vgreen = new Vector3d();
-			vgreen.x = (i & 1) == 1 ? -goldenRatio : goldenRatio;
-			vgreen.y = ((i >> 1) & 1) == 1 ? -goldenRatioInv : goldenRatioInv;
+			vgreen.x = (i & 1) == 1 ? -GOLDEN_RATIO : GOLDEN_RATIO;
+			vgreen.y = ((i >> 1) & 1) == 1 ? -1 / GOLDEN_RATIO : 1 / GOLDEN_RATIO;
 			vgreen.scale(edgeScaleFactor);
 			greenVertices[i] = vgreen;
 			
 			Vector3d vpink = new Vector3d();
-			vpink.z = (i & 1) == 1 ? -goldenRatio : goldenRatio;
-			vpink.x = ((i >> 1) & 1) == 1 ? -goldenRatioInv : goldenRatioInv;
+			vpink.z = (i & 1) == 1 ? -GOLDEN_RATIO : GOLDEN_RATIO;
+			vpink.x = ((i >> 1) & 1) == 1 ? -1 / GOLDEN_RATIO : 1 / GOLDEN_RATIO;
 			vpink.scale(edgeScaleFactor);
 			pinkVertices[i] = vpink;
 			
 			Vector3d vblue = new Vector3d();
-			vblue.y = (i & 1) == 1 ? -goldenRatio : goldenRatio;
-			vblue.z = ((i >> 1) & 1) == 1 ? -goldenRatioInv : goldenRatioInv;
+			vblue.y = (i & 1) == 1 ? -GOLDEN_RATIO : GOLDEN_RATIO;
+			vblue.z = ((i >> 1) & 1) == 1 ? -1 / GOLDEN_RATIO : 1 / GOLDEN_RATIO;
 			vblue.scale(edgeScaleFactor);
 			blueVertices[i] = vblue;
 		}

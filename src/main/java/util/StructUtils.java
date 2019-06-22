@@ -10,7 +10,7 @@ import javax.vecmath.Vector3d;
  * 
  * @author Brian Yao
  */
-public class Struct {
+public final class StructUtils {
 
 	/**
 	 * Deep copy of a list of 3D vectors.

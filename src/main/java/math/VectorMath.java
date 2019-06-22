@@ -7,8 +7,9 @@ import javax.vecmath.Vector3d;
  *
  * @author Brian Yao
  */
-public class VectorMath {
+public final class VectorMath {
 
+	// Acceptable error in floating point computation
 	private static final double EPSILON = 1e-15;
 
 	/**
@@ -19,8 +20,7 @@ public class VectorMath {
 	 * @return True if the vector is approximately zero.
 	 */
 	public static boolean isZero(Vector3d vector) {
-		return Math.abs(vector.x) < EPSILON &&
-				Math.abs(vector.y) < EPSILON && Math.abs(vector.z) < EPSILON;
+		return Math.abs(vector.x) < EPSILON && Math.abs(vector.y) < EPSILON && Math.abs(vector.z) < EPSILON;
 	}
 
 	/**
@@ -31,8 +31,7 @@ public class VectorMath {
 	 * @return True if at least one component is NaN.
 	 */
 	public static boolean isNaN(Vector3d vector) {
-		return Double.isNaN(vector.x) || Double.isNaN(vector.y) ||
-				Double.isNaN(vector.z);
+		return Double.isNaN(vector.x) || Double.isNaN(vector.y) || Double.isNaN(vector.z);
 	}
 
 	/**

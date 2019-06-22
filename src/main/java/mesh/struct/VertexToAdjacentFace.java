@@ -24,12 +24,10 @@ public class VertexToAdjacentFace {
 	 * @param mesh The mesh whose geometry to use to create the mapping.
 	 */
 	public VertexToAdjacentFace(Mesh mesh) {
-		vertexToFace = new HashMap<Integer, Set<Face>>();
+		vertexToFace = new HashMap<>();
 		for (Face face : mesh.getFaces()) {
 			for (int vertexIndex : face.getVertexIndices()) {
-				if (vertexToFace.get(vertexIndex) == null) {
-					vertexToFace.put(vertexIndex, new HashSet<Face>());
-				}
+				vertexToFace.computeIfAbsent(vertexIndex, $ -> new HashSet<>());
 				vertexToFace.get(vertexIndex).add(face);
 			}
 		}

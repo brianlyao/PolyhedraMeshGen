@@ -16,8 +16,8 @@ public class Antiprism extends Polyhedron {
 
 	/**
 	 * Constructs an antiprism whose base has the given circumradius and has
-	 * the given height. The base is a regular n-gon, where n is given as a parameter.
-	 * With high enough n, the geometry is an approximate cylinder.
+	 * the given height. The base is a regular n-gon, where n is given as a
+	 * parameter. With high enough n, the geometry is an approximate cylinder.
 	 * 
 	 * @param numSides The number of sides the base has.
 	 * @param radius   The circumradius of the base.
@@ -49,10 +49,8 @@ public class Antiprism extends Polyhedron {
 			Face topTriangle = new Face(3);
 			int nextBottom = (vertexIndex + 2) % (2 * numSides);
 			int nextTop = nextBottom + 1;
-			bottomTriangle.setAllVertexIndices(vertexIndex,
-					nextBottom, vertexIndex + 1);
-			topTriangle.setAllVertexIndices(vertexIndex + 1, nextBottom,
-					nextTop);
+			bottomTriangle.setAllVertexIndices(vertexIndex, nextBottom, vertexIndex + 1);
+			topTriangle.setAllVertexIndices(vertexIndex + 1, nextBottom, nextTop);
 			
 			addFaces(bottomTriangle, topTriangle);
 			

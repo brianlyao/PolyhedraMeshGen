@@ -15,7 +15,7 @@ import mesh.polyhedra.Polyhedron;
  * 
  * @author Brian Yao
  */
-public class PolyhedraUtils {
+public final class PolyhedraUtils {
 
 	/**
 	 * Generates equally spaced vertices along each edge such that each edge
@@ -50,8 +50,7 @@ public class PolyhedraUtils {
 			// Generate and add vertices for this edge
 			double denom = (double) segments;
 			for (int i = 1 ; i <= segments - 1 ; i++) {
-				Vector3d newVertex = VectorMath.interpolate(endPositions[0],
-						endPositions[1], i / denom);
+				Vector3d newVertex = VectorMath.interpolate(endPositions[0], endPositions[1], i / denom);
 				
 				modify.addVertexPosition(newVertex);
 				newIndices[i - 1] = vertexIndex;
@@ -60,10 +59,10 @@ public class PolyhedraUtils {
 			}
 			
 			// Map the existing edge to the new vertices along it
-			newVertices.computeIfAbsent(ends[0], a -> new HashMap<Integer, int[]>());
+			newVertices.computeIfAbsent(ends[0], $ -> new HashMap<>());
 			newVertices.get(ends[0]).put(ends[1], newIndices);
 
-			newVertices.computeIfAbsent(ends[1], a -> new HashMap<Integer, int[]>());
+			newVertices.computeIfAbsent(ends[1], $ -> new HashMap<>());
 			newVertices.get(ends[1]).put(ends[0], newIndicesReverse);
 		}
 		
@@ -101,13 +100,14 @@ public class PolyhedraUtils {
 		for (Face face : source.getFaces()) {
 			Vector3d centroid = face.centroid();
 			Edge[] edges = face.getEdges();
-			int[] newFaceVertices = new int[face.numVertices()];
+			int[] newFaceVertices = new int[face.getNumVertices()];
 
 			// Generate new vertices partway from edge midpoint to face centroid
 			for (int i = 0; i < edges.length; i++) {
 				Vector3d edgeMidpt = edges[i].midpoint();
-				Vector3d newVertex = VectorMath.interpolate(edgeMidpt,
-						centroid, 0.3); // 0 < arbitrary scale factor < 1
+
+				// Use an arbitrary scale factor between 0 and 1
+				Vector3d newVertex = VectorMath.interpolate(edgeMidpt, centroid, 0.3);
 
 				modify.addVertexPosition(newVertex);
 				newFaceVertices[i] = vertexIndex++;
@@ -116,8 +116,7 @@ public class PolyhedraUtils {
 			// Populate map from edge to new vertices
 			for (int i = 0 ; i < edges.length ; i++) {
 				int[] ends = edges[i].getEnds();
-				edgeToVertex.computeIfAbsent(ends[0],
-						a -> new HashMap<Integer, Integer>());
+				edgeToVertex.computeIfAbsent(ends[0], $ -> new HashMap<>());
 				edgeToVertex.get(ends[0]).put(ends[1], newFaceVertices[i]);
 			}
 		}

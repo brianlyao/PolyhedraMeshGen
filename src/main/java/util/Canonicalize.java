@@ -61,7 +61,7 @@ public class Canonicalize {
 				normalSum.add(normal);
 				
 				// Compute distance from edge to origin
-				avgEdgeDistance += Geometry.pointLineDist(new Vector3d(), lastlastVertex, lastVertex);
+				avgEdgeDistance += GeometryUtils.pointLineDist(new Vector3d(), lastlastVertex, lastVertex);
 				
 				// Update the previous vertices for the next iteration
 				lastLastVertexIndex = lastVertexIndex;
@@ -195,7 +195,7 @@ public class Canonicalize {
 	private static int canonicalize(Polyhedron poly, double threshold,
 									boolean planarize) {
 		Polyhedron dual = poly.dual();
-		List<Vector3d> currentPositions = Struct.copyVectorList(poly.getVertexPositions());
+		List<Vector3d> currentPositions = StructUtils.copyVectorList(poly.getVertexPositions());
 
 		int iterations = 0;
 		while (true) {
@@ -230,7 +230,7 @@ public class Canonicalize {
 				break;
 			}
 
-			currentPositions = Struct.copyVectorList(poly.getVertexPositions());
+			currentPositions = StructUtils.copyVectorList(poly.getVertexPositions());
 			iterations++;
 		}
 

@@ -1,5 +1,7 @@
 package mesh;
 
+import lombok.Getter;
+
 import java.util.Arrays;
 
 import javax.vecmath.Vector3d;
@@ -23,7 +25,8 @@ import javax.vecmath.Vector3d;
 public class Edge {
 
 	private Mesh mesh;
-	
+
+	@Getter
 	private int[] ends;
 	
 	/**
@@ -36,15 +39,6 @@ public class Edge {
 		ends = new int[2];
 		ends[0] = vertex0;
 		ends[1] = vertex1;
-	}
-	
-	/**
-	 * Get the endpoints of this edge, represented by vertex position indices.
-	 * 
-	 * @return The endpoints of this edge.
-	 */
-	public int[] getEnds() {
-		return ends;
 	}
 
 	/**
@@ -62,8 +56,7 @@ public class Edge {
 		} else if (ends[1] == end) {
 			return ends[0];
 		} else {
-			throw new IllegalArgumentException(String.format("Vertex %d is not" +
-					" an endpoint of this edge.", end));
+			throw new IllegalArgumentException(String.format("Vertex %d is not an endpoint of this edge.", end));
 		}
 	}
 	

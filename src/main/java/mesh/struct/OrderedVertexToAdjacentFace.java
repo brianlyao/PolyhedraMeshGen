@@ -32,7 +32,7 @@ public class OrderedVertexToAdjacentFace {
 	 * @param mesh The mesh whose geometry to use to create the mapping.
 	 */
 	public OrderedVertexToAdjacentFace(Mesh mesh) {
-		vertexToFace = new HashMap<Integer, List<Face>>();
+		vertexToFace = new HashMap<>();
 		VertexToAdjacentFace v2af = new VertexToAdjacentFace(mesh);
 		
 		Map<Face, Integer> indexOfI = new HashMap<>();
@@ -44,12 +44,11 @@ public class OrderedVertexToAdjacentFace {
 				// Find at which index vertex i appears in each face
 				for (Face adjFace : adjacentFaces) {
 					int ind = -1;
-					
-					findIndexOfI:
-					for (int j = 0 ; j < adjFace.numVertices() ; j++) {
+
+					for (int j = 0 ; j < adjFace.getNumVertices() ; j++) {
 						if (adjFace.getVertexIndex(j) == i) {
 							ind = j;
-							break findIndexOfI;
+							break;
 						}
 					}
 					
@@ -67,19 +66,18 @@ public class OrderedVertexToAdjacentFace {
 					// Compute which vertex comes right before vertex i
 					int indexBeforeI = indexOfI.get(lastFace) - 1;
 					if (indexBeforeI < 0) {
-						indexBeforeI += lastFace.numVertices();
+						indexBeforeI += lastFace.getNumVertices();
 					}
 					int vertexBeforeI = lastFace.getVertexIndex(indexBeforeI);
 					
 					// Find next face in order
-					findNextFace:
 					for (Face adjFace : adjacentFaces) {
 						if (adjFace != lastFace) {
-							int indexAfterI = (indexOfI.get(adjFace) + 1) % adjFace.numVertices();
+							int indexAfterI = (indexOfI.get(adjFace) + 1) % adjFace.getNumVertices();
 							int vertexAfterI = adjFace.getVertexIndex(indexAfterI);
 							if (vertexAfterI == vertexBeforeI) {
 								orderedAdjacentFaces.add(adjFace);
-								break findNextFace;
+								break;
 							}
 						}
 					}

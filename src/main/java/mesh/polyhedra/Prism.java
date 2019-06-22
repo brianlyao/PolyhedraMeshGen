@@ -47,8 +47,7 @@ public class Prism extends Polyhedron {
 			Face quad = new Face(4);
 			int nextBottom = (vertexIndex + 2) % (2 * numSides);
 			int nextTop = nextBottom + 1;
-			quad.setAllVertexIndices(vertexIndex, nextBottom, nextTop,
-					vertexIndex + 1);
+			quad.setAllVertexIndices(vertexIndex, nextBottom, nextTop, vertexIndex + 1);
 			
 			addFace(quad);
 			

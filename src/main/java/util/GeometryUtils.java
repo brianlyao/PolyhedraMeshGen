@@ -7,7 +7,7 @@ import javax.vecmath.Vector3d;
  * 
  * @author Brian Yao
  */
-public class Geometry {
+public final class GeometryUtils {
 	
 	/**
 	 * Computes the square of the distance from a point to a line in 3D.
@@ -28,8 +28,8 @@ public class Geometry {
 		if (lineVectorLengthSq == 0) {
 			return linePointVector.lengthSquared();
 		} else {
-			Vector3d scaledLineVector = new Vector3d();
-			scaledLineVector.scale(linePointVector.dot(lineVector), lineVector);
+			Vector3d scaledLineVector = new Vector3d(lineVector);
+			scaledLineVector.scale(linePointVector.dot(lineVector));
 			Vector3d distanceVector = new Vector3d();
 			distanceVector.sub(linePointVector, scaledLineVector);
 			return distanceVector.lengthSquared();

@@ -1,15 +1,10 @@
 package mesh;
 
+import javax.vecmath.Vector3d;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import javax.vecmath.Vector3d;
+import java.util.*;
 
 /**
  * A class for polygon meshes. The mesh is represented by an indexed structure,
@@ -30,9 +25,9 @@ public class Mesh {
 	 * Create an empty mesh.
 	 */
 	public Mesh() {
-		faces = new ArrayList<Face>();
-		vertexPositions = new ArrayList<Vector3d>();
-		vertexNormals = new ArrayList<Vector3d>();
+		faces = new ArrayList<>();
+		vertexPositions = new ArrayList<>();
+		vertexNormals = new ArrayList<>();
 	}
 	
 	/**
@@ -47,11 +42,7 @@ public class Mesh {
 	 */
 	public Set<Edge> getEdges() {
 		Set<Edge> edges = new HashSet<>();
-		for (Face face : faces) {
-			for (Edge edge : face.getEdges()) {
-				edges.add(edge);
-			}
-		}
+		faces.forEach(face -> edges.addAll(Arrays.asList(face.getEdges())));
 		return edges;
 	}
 	
@@ -78,10 +69,8 @@ public class Mesh {
 	 * 
 	 * @param faces The faces to add to this mesh.
 	 */
-	public void addFaces(Face ... faces) {
-		for (Face face : faces) {
-			addFace(face);
-		}
+	public void addFaces(Face... faces) {
+		Arrays.asList(faces).forEach(this::addFace);
 	}
 	
 	/**
@@ -90,9 +79,7 @@ public class Mesh {
 	 * @param faces The faces to add to this mesh.
 	 */
 	public void addFaces(Collection<Face> faces) {
-		for (Face face : faces) {
-			addFace(face);
-		}
+		faces.forEach(this::addFace);
 	}
 	
 	/**
@@ -112,9 +99,7 @@ public class Mesh {
 	 * @param positions The array of vertex positions to add to this mesh.
 	 */
 	public void addVertexPositions(Vector3d ... positions) {
-		for (Vector3d position : positions) {
-			vertexPositions.add(position);
-		}
+		vertexPositions.addAll(Arrays.asList(positions));
 	}
 	
 	/**
@@ -123,9 +108,7 @@ public class Mesh {
 	 * @param positions The collection of vertex positions to add to this mesh.
 	 */
 	public void addVertexPositions(Collection<Vector3d> positions) {
-		for (Vector3d position : positions) {
-			vertexPositions.add(position);
-		}
+		vertexPositions.addAll(positions);
 	}
 	
 	/**
@@ -154,9 +137,7 @@ public class Mesh {
 	 * @param normals The array of vertex normals to add to this mesh.
 	 */
 	public void addVertexNormals(Vector3d ... normals) {
-		for (Vector3d normal : normals) {
-			vertexNormals.add(normal);
-		}
+		vertexNormals.addAll(Arrays.asList(normals));
 	}
 	
 	/**
@@ -165,9 +146,7 @@ public class Mesh {
 	 * @param normals The collection of vertex normals to add to this mesh.
 	 */
 	public void addVertexNormals(Collection<Vector3d> normals) {
-		for (Vector3d normal : normals) {
-			vertexNormals.add(normal);
-		}
+		vertexNormals.addAll(normals);
 	}
 	
 	/**
@@ -258,8 +237,7 @@ public class Mesh {
 	
 	@Override
 	public String toString() {
-		return String.format("Vertices:%s\nNormals:%s\nFaces:%s\n", vertexPositions,
-				vertexNormals, faces);
+		return String.format("Vertices:%s\nNormals:%s\nFaces:%s\n", vertexPositions, vertexNormals, faces);
 	}
 	
 }

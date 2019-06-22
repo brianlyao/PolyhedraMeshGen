@@ -1,5 +1,6 @@
 package mesh.polyhedra.plato;
 
+import lombok.Getter;
 import mesh.polyhedra.Polyhedron;
 
 /**
@@ -9,6 +10,7 @@ import mesh.polyhedra.Polyhedron;
  */
 public abstract class PlatonicSolid extends Polyhedron {
 
+	@Getter
 	private double edgeLength;
 	
 	/**
@@ -17,12 +19,5 @@ public abstract class PlatonicSolid extends Polyhedron {
 	public PlatonicSolid(double edgeLength) {
 		this.edgeLength = edgeLength;
 	}
-	
-	/**
-	 * @return The edge length of each edge in this platonic solid.
-	 */
-	public double getEdgeLength() {
-		return edgeLength;
-	}
-	
+
 }

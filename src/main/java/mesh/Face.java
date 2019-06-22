@@ -1,5 +1,7 @@
 package mesh;
 
+import lombok.Getter;
+
 import java.util.Arrays;
 
 import javax.vecmath.Vector3d;
@@ -26,9 +28,12 @@ import javax.vecmath.Vector3d;
 public class Face {
 	
 	private Mesh mesh;
-	
+
+	@Getter
 	private int numVertices;
+	@Getter
 	private int[] vertexIndices;
+	@Getter
 	private int[] normalIndices;
 	
 	/**
@@ -130,12 +135,11 @@ public class Face {
 	public Face[] divideIntoTriangles() {
 		Face[] triangles = new Face[numVertices - 2];
 		for (int i = 0 ; i < numVertices - 2 ; i++) {
-			int v0 = i;
 			int v1 = i + 1;
 			int v2 = numVertices - 1;
 			Face triangle = new Face(3);
-			triangle.setAllVertexIndices(vertexIndices[v0], vertexIndices[v1], vertexIndices[v2]);
-			triangle.setAllNormalIndices(normalIndices[v0], normalIndices[v1], normalIndices[v2]);
+			triangle.setAllVertexIndices(vertexIndices[i], vertexIndices[v1], vertexIndices[v2]);
+			triangle.setAllNormalIndices(normalIndices[i], normalIndices[v1], normalIndices[v2]);
 			triangles[i] = triangle;
 		}
 		return triangles;
@@ -194,33 +198,12 @@ public class Face {
 	}
 	
 	/**
-	 * @return An array of all normal indices for this face.
-	 */
-	public int[] getNormalIndices() {
-		return normalIndices;
-	}
-	
-	/**
 	 * @param vertex The index 0 <= vertex < numVertices of the vertex whose
 	 *               position (index) to retrieve.
 	 * @return The index of the specified vertex's position.
 	 */
 	public int getVertexIndex(int vertex) {
 		return vertexIndices[vertex];
-	}
-	
-	/**
-	 * @return An array of all position indices for this face.
-	 */
-	public int[] getVertexIndices() {
-		return vertexIndices;
-	}
-	
-	/**
-	 * @return The number of vertices this face has.
-	 */
-	public int numVertices() {
-		return numVertices;
 	}
 	
 	/**

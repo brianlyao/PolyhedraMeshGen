@@ -44,6 +44,7 @@ public class Octahedron extends PlatonicSolid {
 			
 			addFaces(topFace, bottomFace);
 		}
+
 		setVertexNormalsToFaceNormals();	
 	}
 	
